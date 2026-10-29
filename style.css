@@ -1,4 +1,109 @@
-* {
-    background-color: #F1DEC9;
-    font-family: helvetica;
+@import url('https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Special+Elite&display=swap');
+
+:root {
+    --bg-color: #050505;
+    --card-bg: #0a0a0a;
+    --blood-red: #8B0000;
+    --bright-blood: #ff1a1a;
+    --text-color: #d1d1d1;
+    --heading-color: #e6e6e6;
+    --font-gothic: 'UnifrakturMaguntia', cursive, serif;
+    --font-body: 'Special Elite', monospace, serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--font-body);
+    margin: 0;
+    padding: 2rem;
+    line-height: 1.8;
+    background-image: radial-gradient(circle at center, #120202 0%, #050505 100%);
+    background-attachment: fixed;
+}
+
+#main-container,
+#thoughts-container,
+#feelings-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: var(--card-bg);
+    border: 2px solid var(--blood-red);
+    box-shadow: 0 0 25px rgba(139, 0, 0, 0.3), inset 0 0 15px rgba(0, 0, 0, 0.9);
+    padding: 3rem;
+    position: relative;
+}
+
+#main-container::before,
+#thoughts-container::before,
+#feelings-container::before {
+    content: '';
+    position: absolute;
+    top: 6px; left: 6px; right: 6px; bottom: 6px;
+    border: 1px solid rgba(139, 0, 0, 0.4);
+    pointer-events: none;
+}
+
+h1, h2, h3, .page-title, .section-heading {
+    font-family: var(--font-gothic);
+    color: var(--heading-color);
+    text-shadow: 0 0 8px rgba(255, 26, 26, 0.5);
+    letter-spacing: 2px;
+}
+
+.main-title, .page-title {
+    font-size: 3rem;
+    color: var(--bright-blood);
+    border-bottom: 2px solid var(--blood-red);
+    padding-bottom: 0.5rem;
+    margin-top: 0;
+    text-align: center;
+}
+
+.section-heading {
+    font-size: 2.2rem;
+    color: var(--blood-red);
+    margin-top: 2.5rem;
+    border-bottom: 1px dashed var(--blood-red);
+}
+
+.sub-heading {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: #888;
+    font-style: italic;
+}
+
+p, li {
+    font-size: 1.05rem;
+    color: #cccccc;
+}
+
+.thought-item, .quote-item {
+    margin-bottom: 1.5rem;
+    padding-left: 1rem;
+    border-left: 3px solid var(--blood-red);
+}
+
+a, .page-link, .home-link, .author-link {
+    color: var(--bright-blood);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--blood-red);
+    transition: all 0.3s ease;
+}
+
+a:hover, .page-link:hover, .home-link:hover, .author-link:hover {
+    color: #fff;
+    text-shadow: 0 0 10px var(--bright-blood);
+    border-bottom: 1px solid var(--bright-blood);
+}
+
+.nav-bar, .nav-links {
+    margin-bottom: 2rem;
+    font-family: var(--font-gothic);
+    font-size: 1.2rem;
+}
+
+ul, ol {
+    padding-left: 1.5rem;
 }
