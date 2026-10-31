@@ -1,4 +1,447 @@
-* {
-    background-color: #F1DEC9;
-    font-family: helvetica;
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&display=swap');
+
+:root {
+
+    --stone-bg: #f3efe6;
+    --stone-surface: #fbf8f2;
+    --stone-elevated: #ffffff;
+    --stone-border: #dcd4c5;
+    --stone-border-chiseled: #b8ad99;
+    --stone-shadow: rgba(44, 38, 30, 0.08);
+
+    --ink-primary: #1c1917;
+    --ink-secondary: #4a453e;
+    --ink-faint: #7a7266;
+    --ink-wash: rgba(28, 25, 23, 0.04);
+
+    --gold-leaf: #9e782f;
+    --gold-leaf-muted: #bda36e;
+    --gold-glow: rgba(158, 120, 47, 0.12);
+
+    --font-display: 'Cinzel', 'Times New Roman', Georgia, serif;
+    --font-text: 'Cormorant Garamond', Garamond, Georgia, serif;
+
+    --transition-classical: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --stone-bg: #0d0e11;
+        --stone-surface: #14161a;
+        --stone-elevated: #1c1e24;
+        --stone-border: #2b2e38;
+        --stone-border-chiseled: #424654;
+        --stone-shadow: rgba(0, 0, 0, 0.6);
+
+        --ink-primary: #ece6dc;
+        --ink-secondary: #a8a296;
+        --ink-faint: #6c675d;
+        --ink-wash: rgba(236, 230, 220, 0.03);
+
+        --gold-leaf: #c5a059;
+        --gold-leaf-muted: #8d7038;
+        --gold-glow: rgba(197, 160, 89, 0.18);
+    }
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 16px;
+    background-color: var(--stone-bg);
+    color: var(--ink-primary);
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    font-family: var(--font-text);
+    font-size: 1.25rem;
+    line-height: 1.85;
+    padding: 3.5rem 1.5rem;
+    position: relative;
+    background-color: var(--stone-bg);
+
+    background-image: 
+        radial-gradient(ellipse 70% 50% at 50% 0%, var(--gold-glow) 0%, transparent 80%),
+        radial-gradient(circle at 50% 100%, var(--ink-wash) 0%, transparent 60%);
+    background-attachment: fixed;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 1.25rem;
+    border: 1px solid var(--stone-border);
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.55;
+}
+
+#main-container,
+#thoughts-container,
+#feelings-container {
+    width: 100%;
+    max-width: 760px;
+    background: var(--stone-surface);
+    border: 1px solid var(--stone-border);
+    padding: 4.5rem 4rem;
+    position: relative;
+    box-shadow: 
+        0 20px 50px var(--stone-shadow),
+        0 1px 0 rgba(255, 255, 255, 0.4) inset;
+    animation: tabletReveal 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+#main-container::after,
+#thoughts-container::after,
+#feelings-container::after {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border: 1px solid var(--stone-border);
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+@keyframes tabletReveal {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.nav-bar {
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--stone-border);
+    display: flex;
+    justify-content: flex-start;
+}
+
+.home-link {
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--ink-faint);
+    text-decoration: none;
+    transition: var(--transition-classical);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.home-link::before {
+    content: '←';
+    font-family: var(--font-text);
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+
+.home-link:hover {
+    color: var(--gold-leaf);
+}
+
+.home-link:hover::before {
+    transform: translateX(-4px);
+}
+
+.main-title,
+.page-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    text-align: center;
+    letter-spacing: 0.2em;
+    color: var(--ink-primary);
+    margin-bottom: 2.5rem;
+    position: relative;
+    padding-bottom: 2rem;
+    line-height: 1.25;
+}
+
+.main-title::after,
+.page-title::after {
+    content: '◇  •  ◇';
+    display: block;
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    letter-spacing: 0.6em;
+    color: var(--gold-leaf);
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    text-align: center;
+    border-bottom: 1px solid var(--stone-border);
+    padding-bottom: 1rem;
+}
+
+.page-header {
+    margin-bottom: 3rem;
+}
+
+.section-heading {
+    font-family: var(--font-display);
+    font-size: 1.45rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-primary);
+    margin-top: 3.5rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--stone-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sub-heading {
+    font-family: var(--font-text);
+    font-size: 1.1rem;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--ink-faint);
+    margin-top: -0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.intro-section {
+    margin-bottom: 3rem;
+    text-align: center;
+}
+
+.intro-text {
+    font-size: clamp(1.2rem, 2.5vw, 1.45rem);
+    font-style: italic;
+    color: var(--ink-secondary);
+    line-height: 1.85;
+    margin-bottom: 1.25rem;
+}
+
+.sub-intro-text {
+    font-size: 1.05rem;
+    color: var(--ink-faint);
+    max-width: 580px;
+    margin: 0 auto;
+    line-height: 1.7;
+}
+
+.text-block {
+    margin-bottom: 2rem;
+    color: var(--ink-secondary);
+    font-size: 1.3rem;
+    line-height: 1.9;
+    text-align: justify;
+    text-justify: inter-word;
+}
+
+.content-body {
+    padding: 1rem 0;
+}
+
+.author-link {
+    color: var(--gold-leaf);
+    text-decoration: none;
+    border-bottom: 1px solid var(--gold-leaf-muted);
+    transition: var(--transition-classical);
+    font-weight: 500;
+}
+
+.author-link:hover {
+    color: var(--ink-primary);
+    border-bottom-color: var(--ink-primary);
+}
+
+.nav-links {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--stone-border);
+}
+
+.link-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.75rem;
+}
+
+.link-item {
+    position: relative;
+}
+
+.page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem 2rem;
+    text-decoration: none;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--ink-primary);
+    background: var(--stone-surface);
+    border: 1px solid var(--stone-border);
+    position: relative;
+    transition: var(--transition-classical);
+    box-shadow: 0 4px 12px var(--stone-shadow);
+}
+
+.page-link::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 1px solid var(--stone-border);
+    opacity: 0;
+    transition: var(--transition-classical);
+}
+
+.page-link:hover {
+    background: var(--stone-elevated);
+    border-color: var(--gold-leaf);
+    color: var(--gold-leaf);
+    transform: translateY(-3px);
+    box-shadow: 
+        0 10px 24px var(--stone-shadow),
+        0 0 15px var(--gold-glow);
+}
+
+.page-link:hover::before {
+    opacity: 1;
+    border-color: var(--gold-leaf-muted);
+}
+
+.thoughts-section {
+    margin-top: 2.5rem;
+}
+
+.thoughts-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.thought-item {
+    position: relative;
+    padding: 1.75rem 2rem;
+    background: var(--stone-surface);
+    border-left: 2px solid var(--gold-leaf);
+    border-top: 1px solid var(--stone-border);
+    border-right: 1px solid var(--stone-border);
+    border-bottom: 1px solid var(--stone-border);
+    color: var(--ink-secondary);
+    font-size: 1.25rem;
+    line-height: 1.85;
+    transition: var(--transition-classical);
+}
+
+.thought-item:hover {
+    background: var(--stone-elevated);
+    border-left-width: 4px;
+    transform: translateX(4px);
+    box-shadow: 0 8px 20px var(--stone-shadow);
+}
+
+.thought-list br {
+    display: none;
+}
+
+.quotes-section {
+    margin-top: 3.5rem;
+}
+
+.quotes-list {
+    list-style: none;
+    counter-reset: quote-counter;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.quote-item {
+    counter-increment: quote-counter;
+    position: relative;
+    padding: 1.25rem 1.75rem 1.25rem 3.5rem;
+    border-bottom: 1px solid var(--stone-border);
+    color: var(--ink-secondary);
+    font-style: italic;
+    font-size: 1.2rem;
+    line-height: 1.75;
+    transition: var(--transition-classical);
+}
+
+.quote-item::before {
+    content: counter(quote-counter, upper-roman);
+    position: absolute;
+    left: 0.5rem;
+    top: 1.25rem;
+    font-family: var(--font-display);
+    font-style: normal;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--gold-leaf);
+    letter-spacing: 0.1em;
+}
+
+.quote-item:hover {
+    color: var(--ink-primary);
+    padding-left: 4rem;
+}
+
+@media (max-width: 720px) {
+    body {
+        padding: 1.5rem 1rem;
+    }
+
+    body::before {
+        inset: 0.5rem;
+    }
+
+    #main-container,
+    #thoughts-container,
+    #feelings-container {
+        padding: 2.75rem 1.75rem;
+    }
+
+    .main-title,
+    .page-title {
+        letter-spacing: 0.14em;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+    }
+
+    .link-list {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .thought-item {
+        padding: 1.25rem 1.25rem;
+        font-size: 1.15rem;
+    }
+
+    .quote-item {
+        padding: 1rem 1rem 1rem 2.75rem;
+        font-size: 1.1rem;
+    }
 }
