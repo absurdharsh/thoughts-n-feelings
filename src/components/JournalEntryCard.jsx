@@ -60,7 +60,7 @@ export default function JournalEntryCard({ entry, index, isInitiallyOpen = true 
           <span>◈</span>
         </div>
 
-        {/* Chiseled Antique Title */}
+        {/* Chiseled Antique Title (Antique font applied strictly to titles) */}
         <h3
           ref={titleRef}
           className="antique-subhead text-2xl sm:text-3xl font-bold tracking-[0.14em] uppercase text-[#e4e2dd] leading-snug hover:text-[#ffffff] transition-colors"
@@ -85,10 +85,10 @@ export default function JournalEntryCard({ entry, index, isInitiallyOpen = true 
 
       {/* Unsealed Stele Body */}
       <div ref={contentRef} className="overflow-hidden">
-        {/* Classical Reading Measure (60ch–65ch) */}
-        <div className="py-6 max-w-prose mx-auto space-y-6 font-serif text-base sm:text-lg leading-[1.95] text-[#d8d2c4] carved-text text-justify sm:text-left">
+        {/* Classical Reading Measure (60ch–65ch) with natural, uniform kerning from 1st character */}
+        <div className="py-6 max-w-prose mx-auto space-y-5 font-serif text-base sm:text-lg leading-[1.95] text-[#d8d2c4] carved-text text-left">
           {entry.content.split('\n\n').map((para, i) => (
-            <p key={i} className="first-letter:text-2xl sm:first-letter:text-3xl first-letter:font-antique first-letter:float-left first-letter:mr-2.5 first-letter:text-[#e4e2dd] first-letter:leading-none">
+            <p key={i} className="m-0 p-0 text-left tracking-normal font-normal">
               {para}
             </p>
           ))}
@@ -103,7 +103,7 @@ export default function JournalEntryCard({ entry, index, isInitiallyOpen = true 
           </div>
         )}
 
-        {/* Classical Attribution & Stone Tags */}
+        {/* Classical Attribution & Stone Tags (Zero emojis) */}
         <div className="max-w-prose mx-auto pt-4 flex flex-wrap items-center justify-between gap-4 font-mono text-xs text-[#8c867a] border-t border-[#36373b]/40">
           <div className="flex flex-wrap items-center gap-2">
             {entry.tags && entry.tags.map((tag, tIdx) => (

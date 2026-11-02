@@ -13,7 +13,7 @@ import { sound } from './utils/audio';
 export default function App() {
   const [entries, setEntries] = useState(() => {
     try {
-      const saved = localStorage.getItem('thoughts_entries_monument_antique');
+      const saved = localStorage.getItem('thoughts_entries_monument_clean');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -28,7 +28,7 @@ export default function App() {
   // Sync to local storage
   useEffect(() => {
     try {
-      localStorage.setItem('thoughts_entries_monument_antique', JSON.stringify(entries));
+      localStorage.setItem('thoughts_entries_monument_clean', JSON.stringify(entries));
     } catch {}
   }, [entries]);
 
@@ -90,7 +90,7 @@ export default function App() {
             {/* Authentic Greek Key Meander Divider */}
             <GreekMeanderDivider className="my-8" />
 
-            {/* Monument Base / Epigraphic Colophon (Grounded, Solitary, Zero Emojis) */}
+            {/* Monument Base / Epigraphic Colophon (Grounded, Solitary, Zero Emojis, Zero Documentation) */}
             <footer className="px-6 py-12 text-center font-mono text-xs text-[#8c867a]">
               <div className="max-w-2xl mx-auto space-y-4">
                 <div className="flex flex-wrap items-center justify-center gap-4 text-[10px] tracking-[0.25em] uppercase text-[#736f66]">
@@ -106,15 +106,6 @@ export default function App() {
                   <span>ISHIKA'S THEOREM</span>
                   <span>&bull;</span>
                   <span>CLARE HARNER (MCMXXXIV)</span>
-                  <span>&bull;</span>
-                  <a
-                    href="https://github.com/absurdharsh/thoughts-n-feelings"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-[#d8d2c4] transition-colors"
-                  >
-                    CODEX REPOSITORY
-                  </a>
                 </div>
 
                 <div className="py-2 text-[10px] text-[#5a5852] leading-relaxed">
@@ -122,7 +113,7 @@ export default function App() {
 {`╔════════════════════════════════════════════════════════════════╗
 ║ MONUMENTUM DIGITALE &bull; EX ARCHIVO ABSURDHARSH                  ║
 ║ "i think more than i feel, so don't expect frequent updates"   ║
-║ Carved with Lenis Heavy Inertia, Antique Epigraphy & Basalt    ║
+║ AETERNITAS &bull; SILENTIUM &bull; MEMORIA                               ║
 ╚════════════════════════════════════════════════════════════════╝`}
                   </pre>
                 </div>

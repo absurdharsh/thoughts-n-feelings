@@ -15,14 +15,14 @@ export default function SmoothScrollProvider({ children }) {
     // 1. Register GSAP ScrollTrigger
     gsap.registerPlugin(ScrollTrigger);
 
-    // 2. Configure Lenis with monumental stone slab physics (weighted, heavy deceleration)
+    // 2. Configure Lenis with heavy stone physics (massive monolithic inertia)
     const lenis = new Lenis({
-      lerp: 0.058, // Heavy deliberate inertia (stone tablet shifting)
+      lerp: 0.055,          // Heavy, weighted stone deceleration
       orientation: 'vertical',
       gestureOrientation: 'vertical',
       smoothWheel: true,
-      wheelMultiplier: 0.88,
-      touchMultiplier: 1.25,
+      wheelMultiplier: 0.8, // Deliberate, physical wheel resistance
+      touchMultiplier: 1.1,
       infinite: false,
     });
 
@@ -34,7 +34,7 @@ export default function SmoothScrollProvider({ children }) {
       setScrollProgress(e.progress || 0);
     });
 
-    // Synchronize into GSAP's high-precision internal ticker
+    // Synchronize into GSAP's high-precision ticker
     const tickerCallback = (time) => {
       lenis.raf(time * 1000);
     };

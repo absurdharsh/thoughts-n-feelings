@@ -2,6 +2,7 @@
 // ARCHAEOLOGICAL CORPUS — The Carved Inscriptions
 // Solitary reflections from absurdharsh, Ishika, and Clare Harner
 // chiseled into a continuous monolithic basalt stele.
+// Zero documentation, zero technical setup copy, zero emojis.
 // ==========================================================================
 
 export const INITIAL_ENTRIES = [
@@ -17,9 +18,9 @@ export const INITIAL_ENTRIES = [
     timestamp: "HORA NOCTURNA",
     tags: ["Determinism", "Divine Decree", "Moral Culpability", "Cosmic Order"],
     snippet: "we hear that it is already decided by God, how we will live, die, and spend our days...",
-    content: `we hear that it is already decided by God, how we will live, die, and spend our days. 
+    content: `we hear that it is already decided by God, how we will live, die, and spend our days.
 
-In fact so much so that, not even a leaf can fall without God's will. 
+In fact so much so that, not even a leaf can fall without God's will.
 
 So why must i be prosecuted for my sins?
 
@@ -148,7 +149,7 @@ Death is merely the loss of living reference. As long as someone utters your nam
     timestamp: "AETERNITAS",
     tags: ["Clare Harner", "Poetry", "Grave", "Wind"],
     snippet: "do not stand by my grave, and cry. i am not there, i did not die...",
-    content: `“do not stand by my grave, and cry. 
+    content: `“do not stand by my grave, and cry.
 i am not there, i did not die.”
 
 — Clare Harner (Immortality, 1934)
@@ -167,29 +168,35 @@ I am a thousand winds that blow. I am the diamond glints on snow. I am the sunli
   },
   {
     id: "stele-006",
-    chapter: "LIBER V: MANIFESTUM FUNDAMENTALE",
+    chapter: "LIBER V: DE DESIDERIO ET UMBRA",
     chapterRoman: "LIBER V",
-    type: "thought",
-    title: "The Original Lapidary Manifesto",
-    epigraph: "DE PRIMO FUNDAMENTO",
+    type: "quote",
+    title: "On Desire and Solitary Shadows",
+    epigraph: "DE CUPIDITATE ET SOLITUDINE",
     author: "absurdharsh",
     date: "ANNO MMXXVI",
-    timestamp: "PRIMA SCRIPTA",
-    tags: ["Origin", "Parchment", "Manifesto", "Raw Code"],
-    snippet: "i have only really done things with html and i havent even given it any structure...",
-    content: `“i have only really done things with html and i havent even given it any structure
-well i dont really know if i want to right now, but we will see to that
-one thing i do wanna do is that i want to make this pretty with css so we will be DOING THAT SHIT FRFR”
+    timestamp: "CREPUSCULUM",
+    tags: ["Desire", "Contentment", "Shadows", "Darkness"],
+    snippet: "fall in love with what you have, not with what you want...",
+    content: `“fall in love with what you have, not with what you want.”
 
-The foundational declaration. Before the architecture was ordered, before the stone was squared and dressed, there was only the raw human urge to make something lasting and beautiful. We preserve this upon the lowest stratum of the monolith so the origin is never obscured.`,
+“even your shadow leaves you, when you're in amidst darkness.”
+
+Desire is the constant longing for what is absent, blinding the eye to the stone beneath one's feet. When darkness deepens and all external reflections vanish, only the core remains. When there is a will, the path carves itself into the rock.`,
     asciiArt: `
   ╔════════════════════════════════════════════════╗
-  ║  FIG. VI: PETRA FUNDAMENTALIS                  ║
+  ║  FIG. VI: SCHEMA UMBRAE ET LUCIS               ║
   ║                                                ║
-  ║  ┌──────────────────────────────────────────┐  ║
-  ║  │ HTML -> CSS -> LAPIS VIVUS               │  ║
-  ║  │ "DOING THAT SHIT FRFR"                   │  ║
-  ║  └──────────────────────────────────────────┘  ║
+  ║                 ☼  [ LUX EXTERNA ]             ║
+  ║                 │                              ║
+  ║                 ▼                              ║
+  ║             ┌───────┐                          ║
+  ║             │ CORPUS│ ───► [ UMBRA ]           ║
+  ║             └───────┘      Shadow departs      ║
+  ║                 │          in the dark         ║
+  ║                 ▼                              ║
+  ║           [ NOX PROFUNDA ]                     ║
+  ║         "Amor fati & veritas"                  ║
   ╚════════════════════════════════════════════════╝
     `
   }
