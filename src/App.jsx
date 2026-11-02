@@ -12,38 +12,36 @@ import {
 } from './services/cloudDb';
 import {
   isSupabaseConfigured,
+  supabase,
   fetchThoughtsFromSupabase,
   insertThoughtToSupabase,
   fetchCommentsFromSupabase,
   fetchCommentsForThoughtFromSupabase,
   insertCommentToSupabase,
   fetchLikesFromSupabase,
-  toggleLikeInSupabase,
-  ownerDeleteThoughtInSupabase,
-  ownerDeleteCommentInSupabase
+  toggleLikeInSupabase
 } from './services/supabaseClient';
 
-// Default owner passkey hash: SHA-256 of 'absurdharsh'
-const DEFAULT_OWNER_HASH = 'f1c094b28bf9330bee6b8191938df3d4234145b833526942740f7408821f880c';
+// Exact owner passkey verification helper (SHA-256 hex digest)
+const OWNER_PASSKEY_HASH = 'acf7001eb827b019664b5f194d8969ed537f78d95117b0928d7eed0a6fec242d';
 
-async function sha256(text) {
-  const enc = new TextEncoder().encode(text);
-  const buf = await crypto.subtle.digest('SHA-256', enc);
-  return Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, '0'))
+async function verifyOwnerPasskey(input) {
+  if (!input) return false;
+  const data = new TextEncoder().encode(input.trim());
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashHex = Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, '0'))
     .join('');
+  return hashHex === OWNER_PASSKEY_HASH;
 }
 
-// Helper to verify owner authentication against sessionStorage and fallback
-function checkOwnerAuth() {
+// Check if owner mode is unlocked in sessionStorage
+function checkOwnerUnlocked() {
   try {
-    const session = 
-      (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('sketchbook_owner_session')) ||
-      (typeof localStorage !== 'undefined' && localStorage.getItem('sketchbook_owner_session'));
-    const target = 
-      (typeof localStorage !== 'undefined' && localStorage.getItem('sketchbook_owner_hash')) || 
-      DEFAULT_OWNER_HASH;
-    return Boolean(session && session === target);
+    return (
+      (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('tf_owner_unlocked') === 'true') ||
+      (typeof localStorage !== 'undefined' && localStorage.getItem('tf_owner_unlocked') === 'true')
+    );
   } catch {
     return false;
   }
@@ -60,19 +58,29 @@ function sortEntriesDescending(list) {
 
 // Seed & Merge helper: Combines INITIAL_ENTRIES with cloud thoughts while respecting owner deletions
 function mergeEntries(cloudThoughts = [], deletedIds = []) {
-  const deletedSet = new Set(deletedIds || []);
+  let localDeletedIds = [];
+  try {
+    const saved = localStorage.getItem('thoughts_sketchbook_deleted_ids');
+    if (saved) localDeletedIds = JSON.parse(saved);
+  } catch {}
+
+  const allDeleted = new Set([
+    ...(deletedIds || []),
+    ...(localDeletedIds || [])
+  ]);
+
   const map = new Map();
 
-  // 1. Add cloud thoughts first
+  // 1. Add cloud thoughts first (excluding any in allDeleted)
   (cloudThoughts || []).forEach((item) => {
-    if (item && item.id && !deletedSet.has(item.id)) {
+    if (item && item.id && !allDeleted.has(item.id)) {
       map.set(item.id, item);
     }
   });
 
   // 2. Add INITIAL_ENTRIES that have not been deleted and not overridden
   INITIAL_ENTRIES.forEach((init) => {
-    if (!deletedSet.has(init.id) && !map.has(init.id)) {
+    if (!allDeleted.has(init.id) && !map.has(init.id)) {
       map.set(init.id, init);
     }
   });
@@ -90,18 +98,24 @@ export default function App() {
     }
   });
 
-  // Entries: initialized from localStorage cache, then synced from cloud DB / Supabase
+  // Entries: initialized from localStorage cache and initial entries, excluding deletedIds
   const [entries, setEntries] = useState(() => {
+    let localDeletedIds = [];
+    try {
+      const savedDel = localStorage.getItem('thoughts_sketchbook_deleted_ids');
+      if (savedDel) localDeletedIds = JSON.parse(savedDel);
+    } catch {}
+
     try {
       const saved = localStorage.getItem('thoughts_sketchbook_entries_v4');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return sortEntriesDescending(parsed);
+          return mergeEntries(parsed, localDeletedIds);
         }
       }
     } catch {}
-    return sortEntriesDescending(INITIAL_ENTRIES);
+    return mergeEntries([], localDeletedIds);
   });
 
   // Persistent anonymous voter ID (stored in localStorage under 'tf_voter_id')
@@ -112,7 +126,6 @@ export default function App() {
   }, []);
 
   // Real-Only Likes store: keyed by entry.id -> array of unique voter IDs [voterId1, voterId2, ...]
-  // Every thought starts with 0 real likes unless explicitly liked by a user
   const [likesData, setLikesData] = useState(() => {
     try {
       const saved = localStorage.getItem('thoughts_sketchbook_likes_v1');
@@ -133,7 +146,7 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Secret Owner Session (verified via SHA-256 and stored in sessionStorage)
-  const [isOwner, setIsOwner] = useState(checkOwnerAuth);
+  const [isOwner, setIsOwner] = useState(checkOwnerUnlocked);
 
   const isSyncingRef = useRef(false);
 
@@ -144,7 +157,6 @@ export default function App() {
 
     try {
       if (isSupabaseConfigured) {
-        // Fetch concurrently from PostgreSQL via Supabase
         const [sbThoughts, sbComments, sbLikes] = await Promise.all([
           fetchThoughtsFromSupabase(),
           fetchCommentsFromSupabase(),
@@ -173,7 +185,6 @@ export default function App() {
           } catch {}
         }
       } else {
-        // Fallback to shared cloud DB
         const cloud = await fetchCloudData();
         if (cloud) {
           const merged = mergeEntries(cloud.thoughts, cloud.deletedIds);
@@ -258,8 +269,7 @@ export default function App() {
     } catch {}
   }, [comments]);
 
-  // Real 1-Like-Per-User Enforcement with server-side RPC support:
-  // toggle_like(target_thought_id, user_voter_id)
+  // Real 1-Like-Per-User Enforcement with server-side RPC support
   const handleToggleLike = async (entryId) => {
     if (!voterId) return;
 
@@ -307,17 +317,11 @@ export default function App() {
   // Hidden Owner Unlock Trigger (Ctrl+Shift+D / Cmd+Shift+D OR ?owner=true)
   useEffect(() => {
     const handleUnlockPrompt = async () => {
-      const target = localStorage.getItem('sketchbook_owner_hash') || DEFAULT_OWNER_HASH;
-      const currentSession = 
-        sessionStorage.getItem('sketchbook_owner_session') || 
-        localStorage.getItem('sketchbook_owner_session');
-
-      if (currentSession === target) {
+      if (checkOwnerUnlocked()) {
         const lock = window.confirm('Owner mode is currently active. Would you like to lock it?');
         if (lock) {
-          sessionStorage.removeItem('sketchbook_owner_session');
-          sessionStorage.removeItem('sketchbook_owner_passkey');
-          localStorage.removeItem('sketchbook_owner_session');
+          sessionStorage.removeItem('tf_owner_unlocked');
+          localStorage.removeItem('tf_owner_unlocked');
           setIsOwner(false);
           window.alert('Owner mode locked.');
         }
@@ -328,11 +332,10 @@ export default function App() {
       if (!input) return;
 
       try {
-        const hash = await sha256(input.trim());
-        if (hash === target) {
-          sessionStorage.setItem('sketchbook_owner_session', hash);
-          sessionStorage.setItem('sketchbook_owner_passkey', input.trim());
-          localStorage.setItem('sketchbook_owner_session', hash);
+        const valid = await verifyOwnerPasskey(input);
+        if (valid) {
+          sessionStorage.setItem('tf_owner_unlocked', 'true');
+          localStorage.setItem('tf_owner_unlocked', 'true');
           setIsOwner(true);
           window.alert('Owner mode verified & unlocked.');
         } else {
@@ -368,46 +371,79 @@ export default function App() {
   }, []);
 
   // Hidden Owner-Only deletion for thoughts/feelings/quotes:
-  // Verified inside PostgreSQL with owner_delete_thought RPC
+  // Immediately removes from DOM and persists globally across cloud DB & localStorage
   const handleDeleteEntry = async (entryId) => {
-    if (!checkOwnerAuth()) {
-      window.alert('Unauthorized: Owner session required.');
-      return;
+    if (!checkOwnerUnlocked()) {
+      const input = window.prompt('Enter owner passkey:');
+      if (!input) return;
+      const valid = await verifyOwnerPasskey(input);
+      if (!valid) {
+        window.alert('Invalid passkey.');
+        return;
+      }
+      sessionStorage.setItem('tf_owner_unlocked', 'true');
+      localStorage.setItem('tf_owner_unlocked', 'true');
+      setIsOwner(true);
     }
 
-    const passkey = 
-      sessionStorage.getItem('sketchbook_owner_passkey') || 
-      window.prompt('Confirm owner passkey to execute database deletion:');
-
-    if (!passkey) return;
-
-    // 1. Optimistic local update
+    // 1. Immediately remove from DOM / local state
     setEntries((prev) => prev.filter((item) => item.id !== entryId));
 
-    // 2. Persist deletion in Supabase RPC (or fallback cloud DB)
-    if (isSupabaseConfigured) {
-      const ok = await ownerDeleteThoughtInSupabase(entryId, passkey);
-      if (!ok) {
-        window.alert('Server-side deletion failed or unauthorized.');
-        syncFromRemote();
-      }
-    } else {
-      await mutateCloudData((current) => {
-        const thoughts = (current.thoughts || []).filter((item) => item.id !== entryId);
-        const deletedIds = Array.from(new Set([...(current.deletedIds || []), entryId]));
-        const nextComments = { ...(current.comments || {}) };
-        delete nextComments[entryId];
-        const nextLikes = { ...(current.likes || {}) };
-        delete nextLikes[entryId];
+    // 2. Persist deleted ID and updated entries to localStorage so it stays permanently deleted on reload
+    try {
+      const existingDel = JSON.parse(localStorage.getItem('thoughts_sketchbook_deleted_ids') || '[]');
+      const nextDel = Array.from(new Set([...existingDel, entryId]));
+      localStorage.setItem('thoughts_sketchbook_deleted_ids', JSON.stringify(nextDel));
 
-        return {
-          ...current,
-          thoughts,
-          deletedIds,
-          comments: nextComments,
-          likes: nextLikes
-        };
-      });
+      const existingEntries = JSON.parse(localStorage.getItem('thoughts_sketchbook_entries_v4') || '[]');
+      const nextEntries = existingEntries.filter((item) => item.id !== entryId);
+      localStorage.setItem('thoughts_sketchbook_entries_v4', JSON.stringify(nextEntries));
+    } catch {}
+
+    // Clean up associated comments and likes
+    setComments((prev) => {
+      const next = { ...prev };
+      delete next[entryId];
+      try { localStorage.setItem('thoughts_sketchbook_comments_v1', JSON.stringify(next)); } catch {}
+      return next;
+    });
+
+    setLikesData((prev) => {
+      const next = { ...prev };
+      delete next[entryId];
+      try { localStorage.setItem('thoughts_sketchbook_likes_v1', JSON.stringify(next)); } catch {}
+      return next;
+    });
+
+    // 3. Persist deletion in shared cloud database (SHARED_DB_URL)
+    await mutateCloudData((current) => {
+      const thoughts = (current.thoughts || []).filter((item) => item.id !== entryId);
+      const deletedIds = Array.from(new Set([...(current.deletedIds || []), entryId]));
+      const nextComments = { ...(current.comments || {}) };
+      delete nextComments[entryId];
+      const nextLikes = { ...(current.likes || {}) };
+      delete nextLikes[entryId];
+
+      return {
+        ...current,
+        thoughts,
+        deletedIds,
+        comments: nextComments,
+        likes: nextLikes
+      };
+    });
+
+    // 4. If Supabase is configured, delete from database as well
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await Promise.all([
+          supabase.from('thoughts').delete().eq('id', entryId),
+          supabase.from('comments').delete().eq('thought_id', entryId),
+          supabase.from('likes').delete().eq('thought_id', entryId)
+        ]);
+      } catch (err) {
+        console.warn('[Supabase] Error deleting thought from table:', err);
+      }
     }
   };
 
@@ -507,44 +543,53 @@ export default function App() {
   };
 
   // Hidden Owner-Only deletion for an individual anonymous comment:
-  // Verified inside PostgreSQL with owner_delete_comment RPC
+  // Immediately removes from DOM and persists globally across cloud DB & localStorage
   const handleDeleteComment = async (entryId, commentId) => {
-    if (!checkOwnerAuth()) {
-      window.alert('Unauthorized: Owner session required.');
-      return;
+    if (!checkOwnerUnlocked()) {
+      const input = window.prompt('Enter owner passkey:');
+      if (!input) return;
+      const valid = await verifyOwnerPasskey(input);
+      if (!valid) {
+        window.alert('Invalid passkey.');
+        return;
+      }
+      sessionStorage.setItem('tf_owner_unlocked', 'true');
+      localStorage.setItem('tf_owner_unlocked', 'true');
+      setIsOwner(true);
     }
 
-    const passkey = 
-      sessionStorage.getItem('sketchbook_owner_passkey') || 
-      window.prompt('Confirm owner passkey to delete comment:');
+    // 1. Immediately remove from DOM / local state
+    setComments((prev) => {
+      const next = {
+        ...prev,
+        [entryId]: (prev[entryId] || []).filter((c) => c.id !== commentId)
+      };
+      try {
+        localStorage.setItem('thoughts_sketchbook_comments_v1', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
 
-    if (!passkey) return;
+    // 2. Persist deletion in shared cloud database (SHARED_DB_URL)
+    await mutateCloudData((current) => {
+      const commentsMap = current.comments || {};
+      const updatedList = (commentsMap[entryId] || []).filter((c) => c.id !== commentId);
+      return {
+        ...current,
+        comments: {
+          ...commentsMap,
+          [entryId]: updatedList
+        }
+      };
+    });
 
-    // 1. Optimistic local update
-    setComments((prev) => ({
-      ...prev,
-      [entryId]: (prev[entryId] || []).filter((c) => c.id !== commentId)
-    }));
-
-    // 2. Persist deletion in Supabase RPC (or fallback cloud DB)
-    if (isSupabaseConfigured) {
-      const ok = await ownerDeleteCommentInSupabase(commentId, passkey);
-      if (!ok) {
-        window.alert('Server-side comment deletion failed.');
-        syncFromRemote();
+    // 3. If Supabase is configured, delete from comments table as well
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('comments').delete().eq('id', commentId);
+      } catch (err) {
+        console.warn('[Supabase] Comment deletion error:', err);
       }
-    } else {
-      await mutateCloudData((current) => {
-        const commentsMap = current.comments || {};
-        const updatedList = (commentsMap[entryId] || []).filter((c) => c.id !== commentId);
-        return {
-          ...current,
-          comments: {
-            ...commentsMap,
-            [entryId]: updatedList
-          }
-        };
-      });
     }
   };
 
