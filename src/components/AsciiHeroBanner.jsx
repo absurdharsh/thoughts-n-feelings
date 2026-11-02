@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import GreekMeanderDivider from './GreekMeanderDivider';
 import { sound } from '../utils/audio';
 
 const MONUMENTAL_ASCII_HEADER = `
-  +==============================================================================+
-  |                                                                              |
-  |   ████████╗██╗  ██╗ ██████╗ ██╗   ██╗ ██████╗ ██╗  ██╗████████╗███████╗      |
-  |   ╚══██╔══╝██║  ██║██╔═══██╗██║   ██║██╔════╝ ██║  ██║╚══██╔══╝██╔════╝      |
-  |      ██║   ███████║██║   ██║██║   ██║██║  ███╗███████║   ██║   ███████╗      |
-  |      ██║   ██╔══██║██║   ██║██║   ██║██║   ██║██╔══██║   ██║   ╚════██║      |
-  |      ██║   ██║  ██║╚██████╔╝╚██████╔╝╚██████╔╝██║  ██║   ██║   ███████║      |
-  |      ╚═╝   ╚═╝  ╚═╝ ╚═════╝  ╚═════╝  ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝      |
-  |                                                                              |
-  |                     T H O U G H T S   ' N '   F E E L I N G S                |
-  |                         M O N U M E N T U M   D I G I T A L E                |
-  |                   A N N O   M M X X V I   &bull;   A B S U R D H A R S H     |
-  +==============================================================================+
+  ╔══════════════════════════════════════════════════════════════════════════════╗
+  ║                                                                              ║
+  ║   ████████╗██╗  ██╗ ██████╗ ██╗   ██╗ ██████╗ ██╗  ██╗████████╗███████╗      ║
+  ║   ╚══██╔══╝██║  ██║██╔═══██╗██║   ██║██╔════╝ ██║  ██║╚══██╔══╝██╔════╝      ║
+  ║      ██║   ███████║██║   ██║██║   ██║██║  ███╗███████║   ██║   ███████╗      ║
+  ║      ██║   ██╔══██║██║   ██║██║   ██║██║   ██║██╔══██║   ██║   ╚════██║      ║
+  ║      ██║   ██║  ██║╚██████╔╝╚██████╔╝╚██████╔╝██║  ██║   ██║   ███████║      ║
+  ║      ╚═╝   ╚═╝  ╚═╝ ╚═════╝  ╚═════╝  ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝      ║
+  ║                                                                              ║
+  ║                       T H O U G H T S   ' N '   F E E L I N G S              ║
+  ║                           M O N U M E N T U M   D I G I T A L E              ║
+  ║                     A N N O   M M X X V I   ‡   A B S U R D H A R S H        ║
+  ╚══════════════════════════════════════════════════════════════════════════════╝
 `;
 
 const MONUMENT_MOTTOES = [
@@ -22,7 +23,7 @@ const MONUMENT_MOTTOES = [
   "Plants nourish animals, animals nourish humans, and humans are consumed by God.",
   "Watch me as I come to life when someone speaks your name upon my grave.",
   "I think more than I feel, so do not expect frequent updates upon this stone.",
-  "Even your shadow departs from you when surrounded by darkness.",
+  "Even your shadow departs from you when you are surrounded by darkness.",
   "Do not stand by my grave and weep; I am not there, I did not die."
 ];
 
@@ -33,135 +34,105 @@ export default function AsciiHeroBanner({
   onToggleSound 
 }) {
   const [mottoIndex, setMottoIndex] = useState(0);
-  const [displayText, setDisplayText] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [chiseled, setChiseled] = useState(false);
+  const [fadeState, setFadeState] = useState(true);
 
-  // Slow, solemn stone chisel typewriter reveal
+  // Slow, quiet dust-clearing fade for mottoes (no neon typewriter)
   useEffect(() => {
-    const currentMotto = MONUMENT_MOTTOES[mottoIndex];
-    let timer;
+    const timer = setInterval(() => {
+      setFadeState(false);
+      setTimeout(() => {
+        setMottoIndex((prev) => (prev + 1) % MONUMENT_MOTTOES.length);
+        setFadeState(true);
+      }, 500);
+    }, 6000);
 
-    if (!isDeleting && displayText.length < currentMotto.length) {
-      timer = setTimeout(() => {
-        setDisplayText(currentMotto.slice(0, displayText.length + 1));
-      }, 42);
-    } else if (!isDeleting && displayText.length === currentMotto.length) {
-      timer = setTimeout(() => setIsDeleting(true), 4200);
-    } else if (isDeleting && displayText.length > 0) {
-      timer = setTimeout(() => {
-        setDisplayText(currentMotto.slice(0, displayText.length - 1));
-      }, 20);
-    } else if (isDeleting && displayText.length === 0) {
-      setIsDeleting(false);
-      setMottoIndex((prev) => (prev + 1) % MONUMENT_MOTTOES.length);
-    }
+    return () => clearInterval(timer);
+  }, []);
 
-    return () => clearTimeout(timer);
-  }, [displayText, isDeleting, mottoIndex]);
-
-  const handleChiselStrike = () => {
+  const handleStoneTap = () => {
     sound.playClick(1.0);
-    setChiseled(true);
-    setTimeout(() => setChiseled(false), 220);
   };
 
   return (
-    <header id="hero" className="relative min-h-[90vh] flex flex-col justify-center items-center px-4 py-16 text-center select-none">
-      {/* Top Epigraphic Ledger Header */}
-      <div className="w-full max-w-4xl mx-auto mb-6 flex items-center justify-between font-mono text-[11px] text-[#73716b] border-b border-[#262523] pb-2.5">
-        <div className="flex items-center space-x-2.5">
-          <span className="w-1.5 h-1.5 bg-[#d8d2c4] rounded-none opacity-80" />
-          <span className="tracking-[0.2em] uppercase text-[#a39f96]">TABULA I &bull; EX ARCHIVO BASALTICO</span>
+    <header className="relative pt-16 pb-8 px-4 text-center select-none">
+      {/* Stele Top Archaeological Marker */}
+      <div className="flex items-center justify-between font-mono text-[10px] text-[#8c867a] border-b border-[#36373b]/60 pb-3 mb-8 tracking-[0.25em] uppercase">
+        <div className="flex items-center space-x-2">
+          <span>◈</span>
+          <span>STELE NO. I &bull; EX ARCHIVO ABSURDHARSH</span>
         </div>
-        <div className="hidden sm:flex items-center space-x-4 tracking-widest text-[#73716b]">
-          <span>STATUS: PETRIFICATUS</span>
+        <div className="hidden sm:flex items-center space-x-3 text-[#736f66]">
+          <span>LAPIS BASALTICUS</span>
           <span>&bull;</span>
-          <span>ORDO: CHRONOLOGICUS</span>
+          <span>AETERNITAS</span>
         </div>
       </div>
 
-      {/* Main Basalt Stele Monolith */}
-      <div 
-        onClick={handleChiselStrike}
-        className={`w-full max-w-4xl mx-auto p-6 sm:p-10 stone-slab stone-grain border border-[#2e2d29] transition-all duration-300 cursor-pointer ${chiseled ? 'scale-[0.998] border-[#44423d]' : 'hover:border-[#3a3934]'}`}
-      >
-        {/* Stele Top Keystone / Architectural Header */}
-        <div className="flex justify-between items-center text-[10px] font-mono text-[#73716b] border-b border-[#22211f] pb-3 mb-6">
-          <span className="tracking-widest">‡ CODEX LAPIDARIS ‡</span>
-          <span className="tracking-widest font-serif text-[#94928b]">EPIGRAPHIA ABSURDHARSH</span>
-          <span className="tracking-widest">‡ MCMXXVI ‡</span>
-        </div>
+      {/* Primary Chiseled Monolith Title (Antique Typeface Specimen) */}
+      <div onClick={handleStoneTap} className="cursor-pointer group py-4">
+        <h1 className="antique-title text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-[0.12em] uppercase leading-none select-none">
+          thoughts<br />'n'<br />feelings
+        </h1>
 
-        {/* Monumental ASCII Slab (Responsive) */}
-        <div className="overflow-x-auto py-2">
-          <pre className="font-mono text-[9px] sm:text-[11px] md:text-[12px] leading-[1.25] text-[#d8d2c4] carved-text font-bold inline-block mx-auto select-none opacity-95">
+        <p className="mt-4 font-mono text-[11px] sm:text-xs tracking-[0.3em] uppercase text-[#9c9679]">
+          [ MONUMENTUM DIGITALE &bull; MMXXVI ]
+        </p>
+      </div>
+
+      {/* Greek Key Meander Divider Band */}
+      <GreekMeanderDivider className="my-6" />
+
+      {/* Carved ASCII Monumental Tabula */}
+      <div className="overflow-x-auto py-2">
+        <pre className="font-mono text-[9px] sm:text-[10px] md:text-[11px] leading-[1.25] text-[#d8d2c4] carved-text inline-block mx-auto select-none opacity-90">
 {MONUMENTAL_ASCII_HEADER}
-          </pre>
-        </div>
+        </pre>
+      </div>
 
-        {/* Subtitle / Architectural Inscription */}
-        <div className="my-6 space-y-2">
-          <p className="font-display text-xs sm:text-sm tracking-[0.28em] text-[#94928b] uppercase">
-            A Living Monument of Consciousness, Paradox & Mortality
-          </p>
-          <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-[#44423d] to-transparent mx-auto my-3" />
-        </div>
+      {/* Dust-Clearing Motto Inscription (Quiet & Grounded) */}
+      <div className="my-8 max-w-2xl mx-auto px-6 py-4 bg-[#1a1b1d] border-y border-[#36373b] stone-inset">
+        <p className={`font-serif italic text-base sm:text-lg text-[#d8d2c4] carved-text leading-relaxed transition-opacity duration-500 ${fadeState ? 'opacity-100' : 'opacity-0'}`}>
+          “{MONUMENT_MOTTOES[mottoIndex]}”
+        </p>
+      </div>
 
-        {/* Chiseled Motto Typewriter Display */}
-        <div className="min-h-[58px] flex items-center justify-center px-4 py-3 bg-[#0d0d0c] border border-[#22211f] stone-inset">
-          <span className="font-mono text-xs text-[#73716b] mr-2">§</span>
-          <p className="font-serif italic text-base sm:text-lg text-[#e5e0d8] carved-text max-w-2xl leading-relaxed">
-            “{displayText}”<span className="inline-block w-1.5 h-4 bg-[#d8d2c4] ml-1 translate-y-[2px] animate-pulse" />
-          </p>
-          <span className="font-mono text-xs text-[#73716b] ml-2">§</span>
-        </div>
+      {/* Recessed Stone Inlays (Buttons) */}
+      <div className="flex flex-wrap items-center justify-center gap-3 pt-2 font-mono text-xs">
+        <button
+          type="button"
+          onClick={() => {
+            sound.playClick(1.2);
+            onInscribeClick();
+          }}
+          className="stone-inlay-btn px-6 py-2.5 flex items-center space-x-2"
+        >
+          <span>INSCRIBE STELE</span>
+          <span className="text-[#9c9679]">‡</span>
+        </button>
 
-        {/* Monolithic Action Slabs */}
-        <div className="mt-8 pt-6 border-t border-[#22211f] flex flex-wrap items-center justify-center gap-3 font-mono text-xs">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              sound.playClick(1.2);
-              onInscribeClick();
-            }}
-            className="stone-btn px-6 py-2.5 font-display tracking-widest text-xs uppercase flex items-center space-x-2"
-          >
-            <span>Inscribe Stone</span>
-            <span className="font-mono text-[10px] text-[#73716b]">✍</span>
-          </button>
+        <button
+          type="button"
+          onClick={() => {
+            sound.playFold();
+            onScrollToLedger();
+          }}
+          className="stone-inlay-btn px-6 py-2.5 flex items-center space-x-2 text-[#8c867a]"
+        >
+          <span>DESCEND INTO CORPUS</span>
+          <span className="text-[10px]">▼</span>
+        </button>
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              sound.playFold();
-              onScrollToLedger();
-            }}
-            className="stone-btn px-6 py-2.5 font-display tracking-widest text-xs uppercase flex items-center space-x-2 text-[#94928b]"
-          >
-            <span>Descend into Codex</span>
-            <span className="font-mono text-[10px]">▼</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleSound();
-            }}
-            className="stone-btn px-4 py-2.5 font-display tracking-wider text-xs uppercase text-[#73716b] hover:text-[#e5e0d8]"
-            title="Toggle Mineral Resonance"
-          >
-            <span>{soundEnabled ? 'Chamber Resonance [ON]' : 'Resonance [OFF]'}</span>
-          </button>
-        </div>
-
-        {/* Bottom Stone Seal */}
-        <div className="mt-6 text-[9px] font-mono text-[#52504b] tracking-[0.25em] uppercase">
-          [ EX NIHILO NIHIL FIT &bull; CARVED INTO RECTANGULAR BASALT ]
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            sound.playClick(1.0);
+            onToggleSound();
+          }}
+          className="stone-inlay-btn px-4 py-2.5 text-[#8c867a] hover:text-[#d8d2c4]"
+          title="Toggle Subterranean Acoustic Resonance"
+        >
+          <span>{soundEnabled ? 'RESONANCE [ON]' : 'RESONANCE [OFF]'}</span>
+        </button>
       </div>
     </header>
   );

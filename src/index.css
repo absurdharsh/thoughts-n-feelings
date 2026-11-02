@@ -6,42 +6,70 @@
   html, body {
     margin: 0;
     padding: 0;
-    background-color: #0a0a09;
-    color: #e5e0d8;
+    background-color: #141516;
+    color: #d8d2c4;
     font-family: 'EB Garamond', Garamond, Georgia, serif;
     overflow-x: hidden;
     letter-spacing: 0.015em;
   }
 
-  /* Mineral Stone Scrollbar */
+  /* Ancient Stone Scrollbar */
   ::-webkit-scrollbar {
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    background: #0a0a09;
-    border-left: 1px solid #1a1a18;
+    background: #141516;
+    border-left: 1px solid #222325;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #262523;
+    background: #2b2c30;
     border-radius: 0px;
-    border: 1px solid #383733;
+    border: 1px solid #3b3c42;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #44423d;
+    background: #4a4b52;
   }
 }
 
-/* Custom Inscription Text Selection */
+/* Inscription Selection */
 ::selection {
-  background: rgba(216, 210, 196, 0.2);
+  background: rgba(156, 150, 121, 0.35);
   color: #ffffff;
 }
 
-/* Epigraphic Carved & Debossed Text System */
+/* ==========================================================================
+   ANTIQUE SPECIMEN CHISELED TYPOGRAPHY (18935121.jpg)
+   Bone-white limestone top facet (#e4e2dd), muted olive-stone lower bevel (#9c9679),
+   and deep bronze-earth drop-relief outline (#6a6344).
+   ========================================================================== */
+.antique-title {
+  font-family: 'Antique', 'Cinzel Decorative', 'Cinzel', serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #f7f5f0 0%, #e4e2dd 48%, #9c9679 52%, #6a6344 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: 
+    drop-shadow(0 1px 0 #4a452d) 
+    drop-shadow(0 2px 0 #2a2719) 
+    drop-shadow(0 5px 8px rgba(0, 0, 0, 0.95));
+}
+
+.antique-subhead {
+  font-family: 'Antique', 'Cinzel', serif;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #e4e2dd 0%, #c4c1b6 50%, #8c867a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 1px 0 #222325);
+}
+
+/* Carved & Debossed Stone Inscriptions */
 .carved-text {
   text-shadow: -1px -1px 0 rgba(0, 0, 0, 0.95), 1px 1px 0 rgba(255, 255, 255, 0.08);
 }
@@ -50,110 +78,65 @@
   text-shadow: -2px -2px 0 rgba(0, 0, 0, 0.98), 1px 1px 0 rgba(255, 255, 255, 0.12);
 }
 
-.carved-text-subtle {
-  text-shadow: -1px -1px 0 rgba(0, 0, 0, 0.8), 1px 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-/* Monolithic Stone Slab Structures */
-.stone-slab {
-  background-color: #121211;
-  border: 1px solid #282724;
+/* Continuous Monolithic Stone Stele (Rough chipped slate) */
+.monolith-stele {
+  background-color: #222325;
+  border-left: 2px solid #36373b;
+  border-right: 2px solid #2a2b2f;
   box-shadow: 
     inset 1px 1px 0 rgba(255, 255, 255, 0.06),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.85),
-    0 25px 50px -12px rgba(0, 0, 0, 0.95);
+    inset -1px -1px 0 rgba(0, 0, 0, 0.92),
+    0 40px 100px -20px rgba(0, 0, 0, 0.98);
   position: relative;
 }
 
-.stone-slab-elevated {
-  background-color: #161615;
-  border: 1px solid #33322d;
-  box-shadow: 
-    inset 1px 1px 0 rgba(255, 255, 255, 0.08),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.9),
-    0 15px 35px -10px rgba(0, 0, 0, 0.9);
+/* Subtle organic stone pitting/grain */
+.stele-pitting {
+  background-image: 
+    radial-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 0),
+    radial-gradient(rgba(0, 0, 0, 0.28) 1px, transparent 0);
+  background-size: 14px 14px, 28px 28px;
 }
 
-.stone-beveled {
-  box-shadow: 
-    inset 1px 1px 0 rgba(255, 255, 255, 0.07),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.75);
-}
-
-.stone-inset {
-  background-color: #0c0c0b;
-  border: 1px solid #1f1f1d;
-  box-shadow: 
-    inset 0 3px 8px rgba(0, 0, 0, 0.9),
-    inset 0 0 1px rgba(0, 0, 0, 0.95);
-}
-
-/* Monolithic Stone Buttons */
-.stone-btn {
-  background-color: #1a1a18;
-  border: 1px solid #34332e;
+/* Recessed Stone Inlays (Buttons & Controls) */
+.stone-inlay-btn {
+  background-color: #1a1b1d;
+  border: 1px solid #36373b;
   color: #d8d2c4;
+  font-family: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   border-radius: 0px;
   box-shadow: 
-    inset 1px 1px 0 rgba(255, 255, 255, 0.08),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.05),
     inset -1px -1px 0 rgba(0, 0, 0, 0.8),
-    0 3px 6px rgba(0, 0, 0, 0.6);
-  transition: all 0.12s ease-out;
+    0 2px 4px rgba(0, 0, 0, 0.8);
+  transition: all 0.15s ease-out;
   cursor: pointer;
   user-select: none;
 }
 
-.stone-btn:hover {
-  background-color: #222220;
-  border-color: #484640;
+.stone-inlay-btn:hover {
+  background-color: #26272b;
+  border-color: #4a4c54;
   color: #ffffff;
 }
 
-.stone-btn:active {
+.stone-inlay-btn:active {
   transform: translateY(1px);
   box-shadow: 
-    inset -1px -1px 0 rgba(255, 255, 255, 0.05),
-    inset 1px 1px 0 rgba(0, 0, 0, 0.9),
-    0 1px 2px rgba(0, 0, 0, 0.8);
-  background-color: #141413;
+    inset -1px -1px 0 rgba(255, 255, 255, 0.03),
+    inset 1px 1px 0 rgba(0, 0, 0, 0.95),
+    0 1px 1px rgba(0, 0, 0, 0.9);
+  background-color: #141517;
 }
 
-/* Chiseled Stone Crease for Folios */
-.stone-spine-crease {
+/* Chiseled Inset Troughs */
+.stone-inset {
+  background-color: #17181a;
+  border: 1px solid #28292d;
   box-shadow: 
-    inset 24px 0 36px -18px rgba(0, 0, 0, 0.95),
-    inset -24px 0 36px -18px rgba(0, 0, 0, 0.95);
-}
-
-/* Micro-mineral grain texture */
-.stone-grain {
-  background-image: 
-    radial-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 0),
-    radial-gradient(rgba(0, 0, 0, 0.25) 1px, transparent 0);
-  background-size: 12px 12px, 24px 24px;
-}
-
-/* Theme Varietals (Ancient Rocks) */
-.theme-basalt {
-  --mineral-bg: #0a0a09;
-  --mineral-slab: #121211;
-  --mineral-highlight: #d8d2c4;
-}
-
-.theme-slate {
-  --mineral-bg: #0c0e12;
-  --mineral-slab: #14171e;
-  --mineral-highlight: #c7d0dc;
-}
-
-.theme-limestone {
-  --mineral-bg: #0e0d0b;
-  --mineral-slab: #171512;
-  --mineral-highlight: #e4ddcf;
-}
-
-.theme-obsidian {
-  --mineral-bg: #050505;
-  --mineral-slab: #0c0c0c;
-  --mineral-highlight: #b0aba2;
+    inset 0 3px 8px rgba(0, 0, 0, 0.9),
+    inset 0 0 1px rgba(0, 0, 0, 0.95);
 }

@@ -3,38 +3,39 @@ import { sound } from '../utils/audio';
 
 const STELE_ASCII_SEALS = [
   {
-    name: 'MIND & ARCHITECT',
+    name: 'MENS AETERNA',
     art: `
-  +==================================+
-  |    .---.                         |
-  |   /     \\    [ MENS AETERNA ]    |
-  |  | () () |   "Unfiltered thought |
-  |   \\  ^  /     etched in stone."  |
-  |    |||||                         |
-  +==================================+
+  ╔════════════════════════════════════════════════╗
+  ║  SCHEMA: MENS AETERNA                          ║
+  ║  "Unfiltered thought etched in stone."         ║
+  ║                  ┌───┐                         ║
+  ║                 │ O │                          ║
+  ║                  └───┘                         ║
+  ╚════════════════════════════════════════════════╝
     `
   },
   {
-    name: 'SOLAR PYRAMID',
+    name: 'PYRAMIS SOLIS',
     art: `
-  +==================================+
-  |            /\\                    |
-  |           /  \\    [ PYRAMIS ]    |
-  |          /====\\   "Truth stands  |
-  |         /      \\   unbroken."    |
-  |        /========\\                |
-  +==================================+
+  ╔════════════════════════════════════════════════╗
+  ║  SCHEMA: PYRAMIS ASCENSIONIS                   ║
+  ║  "Truth stands unbroken across centuries."     ║
+  ║                   /\                           ║
+  ║                  /  \                          ║
+  ║                 /====\                         ║
+  ╚════════════════════════════════════════════════╝
     `
   },
   {
-    name: 'SEPULCHRAL EPITAPH',
+    name: 'SEPULCRUM',
     art: `
-  +==================================+
-  |              .---.               |
-  |             /     \\              |
-  |            |  RIP  |  [ EPITAPH ]|
-  |         ---|-------|---          |
-  +==================================+
+  ╔════════════════════════════════════════════════╗
+  ║  SCHEMA: SEPULCRUM ET CINIS                    ║
+  ║  "Memoria Aeterna in Saxo"                     ║
+  ║                    .---.                       ║
+  ║                   /     \                      ║
+  ║                  |  RIP  |                     ║
+  ╚════════════════════════════════════════════════╝
     `
   }
 ];
@@ -43,7 +44,7 @@ export default function InteractiveTerminalLog({ isOpen, onClose, onSaveEntry, e
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('absurdharsh');
   const [type, setType] = useState('thought');
-  const [chapter, setChapter] = useState('LIBER V: MANIFESTUM ET FUNDAMENTUM');
+  const [chapter, setChapter] = useState('LIBER V: MANIFESTUM FUNDAMENTALE');
   const [content, setContent] = useState('');
   const [tags, setTags] = useState('Philosophy, Lapis Vivus');
   const [selectedSealIndex, setSelectedSealIndex] = useState(0);
@@ -56,10 +57,6 @@ export default function InteractiveTerminalLog({ isOpen, onClose, onSaveEntry, e
 
     sound.playClick(1.4);
 
-    const now = new Date();
-    const romanMonths = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
-    const romanDate = `ANNO MMXXVI &bull; ${romanMonths[now.getMonth()]}.${now.getDate()}`;
-
     const newEntry = {
       id: `stele-${Date.now().toString().slice(-4)}`,
       chapter: chapter || 'LIBER RECENS',
@@ -68,15 +65,12 @@ export default function InteractiveTerminalLog({ isOpen, onClose, onSaveEntry, e
       title: title.trim(),
       epigraph: 'IN RECENTI LAPIDE CARVATUS',
       author: author.trim() || 'Anonymous Scribe',
-      date: romanDate,
-      timestamp: `HORA ${now.toTimeString().split(' ')[0]}`,
+      date: 'ANNO MMXXVI',
+      timestamp: 'HORA RECENS',
       tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
       snippet: content.trim().slice(0, 85) + '...',
       content: content.trim(),
       asciiArt: STELE_ASCII_SEALS[selectedSealIndex].art,
-      mood: 'Monolithic',
-      likes: 1,
-      starred: true,
     };
 
     onSaveEntry(newEntry);
@@ -117,22 +111,22 @@ export default function InteractiveTerminalLog({ isOpen, onClose, onSaveEntry, e
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-sm select-none">
-      <div className="relative w-full max-w-2xl stone-slab stone-grain p-6 sm:p-8 border border-[#383631] shadow-2xl overflow-y-auto max-h-[90vh]">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-[#282723] pb-4 mb-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-none select-none">
+      <div className="relative w-full max-w-xl bg-[#222325] border-2 border-[#36373b] p-6 sm:p-8 shadow-[0_30px_90px_rgba(0,0,0,0.98)] overflow-y-auto max-h-[90vh]">
+        {/* Modal Archaeological Header */}
+        <div className="flex items-center justify-between border-b border-[#36373b] pb-4 mb-6">
           <div className="flex items-center space-x-2">
-            <span className="font-mono text-sm text-[#73716b]">‡</span>
-            <h3 className="font-display text-sm sm:text-base font-bold tracking-[0.25em] text-[#e5e0d8] uppercase carved-text">
+            <span className="font-mono text-sm text-[#9c9679]">‡</span>
+            <h3 className="antique-subhead text-sm sm:text-base font-bold tracking-[0.2em] text-[#e4e2dd] uppercase">
               CHISEL INSCRIPTION UPON STELE
             </h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="stone-btn px-2.5 py-1 text-xs font-mono text-[#73716b] hover:text-[#ffffff]"
+            className="stone-inlay-btn px-2.5 py-1 text-xs"
           >
-            &times; CLOSE
+            [ CLOSE &times; ]
           </button>
         </div>
 
@@ -140,22 +134,22 @@ export default function InteractiveTerminalLog({ isOpen, onClose, onSaveEntry, e
         <form onSubmit={handleSubmit} className="space-y-4 font-mono text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] tracking-widest text-[#73716b] uppercase mb-1">
-                INSCRIBED TITLE (TITULUS)
+              <label className="block text-[10px] tracking-widest text-[#8c867a] uppercase mb-1">
+                TITULUS (TITLE)
               </label>
               <input
                 type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. On The Silence of Midnight"
-                className="w-full px-3 py-2 bg-[#0a0a09] border border-[#262522] stone-inset text-xs text-[#d8d2c4] focus:outline-none focus:border-[#44423d]"
+                placeholder="Title of reflection"
+                className="w-full px-3 py-2 bg-[#17181a] border border-[#36373b] stone-inset text-xs text-[#d8d2c4] focus:outline-none focus:border-[#6a6344]"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] tracking-widest text-[#73716b] uppercase mb-1">
-                SCRIBE NAME (AUCTOR)
+              <label className="block text-[10px] tracking-widest text-[#8c867a] uppercase mb-1">
+                AUCTOR (SCRIBE)
               </label>
               <input
                 type="text"
@@ -163,20 +157,20 @@ export default function InteractiveTerminalLog({ isOpen, onClose, onSaveEntry, e
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
                 placeholder="absurdharsh or alias"
-                className="w-full px-3 py-2 bg-[#0a0a09] border border-[#262522] stone-inset text-xs text-[#d8d2c4] focus:outline-none focus:border-[#44423d]"
+                className="w-full px-3 py-2 bg-[#17181a] border border-[#36373b] stone-inset text-xs text-[#d8d2c4] focus:outline-none focus:border-[#6a6344]"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] tracking-widest text-[#73716b] uppercase mb-1">
+              <label className="block text-[10px] tracking-widest text-[#8c867a] uppercase mb-1">
                 CLASSIFICATION
               </label>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                className="w-full px-3 py-2 bg-[#0a0a09] border border-[#262522] stone-inset text-xs text-[#d8d2c4] focus:outline-none focus:border-[#44423d] uppercase"
+                className="w-full px-3 py-2 bg-[#17181a] border border-[#36373b] stone-inset text-xs text-[#d8d2c4] focus:outline-none focus:border-[#6a6344] uppercase"
               >
                 <option value="thought">COGITATIO (Thought / Reasoning)</option>
                 <option value="feeling">SENTIENTIA (Feeling / Internal Weather)</option>
@@ -185,21 +179,21 @@ export default function InteractiveTerminalLog({ isOpen, onClose, onSaveEntry, e
             </div>
 
             <div>
-              <label className="block text-[10px] tracking-widest text-[#73716b] uppercase mb-1">
-                STRATA / CHAPTER
+              <label className="block text-[10px] tracking-widest text-[#8c867a] uppercase mb-1">
+                STRATUM / CHAPTER
               </label>
               <input
                 type="text"
                 value={chapter}
                 onChange={(e) => setChapter(e.target.value)}
-                placeholder="e.g. LIBER V: MANIFESTUM"
-                className="w-full px-3 py-2 bg-[#0a0a09] border border-[#262522] stone-inset text-xs text-[#d8d2c4] focus:outline-none focus:border-[#44423d] uppercase"
+                placeholder="e.g. LIBER V"
+                className="w-full px-3 py-2 bg-[#17181a] border border-[#36373b] stone-inset text-xs text-[#d8d2c4] focus:outline-none focus:border-[#6a6344] uppercase"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[10px] tracking-widest text-[#73716b] uppercase mb-1">
+            <label className="block text-[10px] tracking-widest text-[#8c867a] uppercase mb-1">
               PRIMARY INSCRIPTION (WORDS ETCHED INTO ROCK)
             </label>
             <textarea
@@ -207,14 +201,14 @@ export default function InteractiveTerminalLog({ isOpen, onClose, onSaveEntry, e
               rows={4}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Inscribe your unfiltered philosophical reasoning, emotions, or reflections..."
-              className="w-full px-3 py-2 bg-[#0a0a09] border border-[#262522] stone-inset text-xs font-serif text-[#d8d2c4] leading-relaxed focus:outline-none focus:border-[#44423d]"
+              placeholder="Inscribe your unfiltered thoughts, feelings, or reflections..."
+              className="w-full px-3 py-2 bg-[#17181a] border border-[#36373b] stone-inset text-xs font-serif text-[#d8d2c4] leading-relaxed focus:outline-none focus:border-[#6a6344]"
             />
           </div>
 
           <div>
-            <label className="block text-[10px] tracking-widest text-[#73716b] uppercase mb-1">
-              CHOOSE LAPIDARY SEAL (ASCII ARTIFACT)
+            <label className="block text-[10px] tracking-widest text-[#8c867a] uppercase mb-1">
+              CHOOSE SCHEMATIC SEAL (ASCII ARTIFACT)
             </label>
             <div className="grid grid-cols-3 gap-2">
               {STELE_ASCII_SEALS.map((seal, idx) => (
@@ -222,7 +216,7 @@ export default function InteractiveTerminalLog({ isOpen, onClose, onSaveEntry, e
                   type="button"
                   key={idx}
                   onClick={() => setSelectedSealIndex(idx)}
-                  className={`stone-btn p-2 text-[10px] uppercase tracking-wider ${selectedSealIndex === idx ? 'bg-[#222220] border-[#44423d] text-[#ffffff]' : 'text-[#73716b]'}`}
+                  className={`stone-inlay-btn p-2 text-[10px] uppercase tracking-wider ${selectedSealIndex === idx ? 'bg-[#2b2c31] border-[#4f515a] text-[#ffffff]' : 'text-[#8c867a]'}`}
                 >
                   {seal.name}
                 </button>
@@ -231,12 +225,12 @@ export default function InteractiveTerminalLog({ isOpen, onClose, onSaveEntry, e
           </div>
 
           {/* Buttons: Submit & Export */}
-          <div className="pt-4 border-t border-[#22211f] flex flex-wrap items-center justify-between gap-3">
+          <div className="pt-4 border-t border-[#36373b] flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center space-x-2">
               <button
                 type="button"
                 onClick={exportLedgerAsMarkdown}
-                className="stone-btn px-3 py-2 text-[10px] uppercase text-[#88857c]"
+                className="stone-inlay-btn px-3 py-2 text-[10px] uppercase text-[#8c867a]"
                 title="Export entire codex in Markdown format"
               >
                 EXPORT .MD CODEX
@@ -244,7 +238,7 @@ export default function InteractiveTerminalLog({ isOpen, onClose, onSaveEntry, e
               <button
                 type="button"
                 onClick={exportLedgerAsJson}
-                className="stone-btn px-3 py-2 text-[10px] uppercase text-[#88857c]"
+                className="stone-inlay-btn px-3 py-2 text-[10px] uppercase text-[#8c867a]"
                 title="Export entire codex in JSON format"
               >
                 EXPORT .JSON
@@ -253,9 +247,9 @@ export default function InteractiveTerminalLog({ isOpen, onClose, onSaveEntry, e
 
             <button
               type="submit"
-              className="stone-btn px-6 py-2.5 font-display text-xs uppercase tracking-[0.2em] text-[#ffffff] bg-[#222220] border-[#44423d]"
+              className="stone-inlay-btn px-6 py-2.5 text-xs uppercase tracking-[0.16em] text-[#ffffff] bg-[#2b2c31] border-[#4f515a]"
             >
-              CHISEL INTO BASALT ✍
+              CHISEL INTO BASALT ‡
             </button>
           </div>
         </form>

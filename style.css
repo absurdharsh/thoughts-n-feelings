@@ -1,40 +1,27 @@
 /* ==========================================================================
    THOUGHTS 'N' FEELINGS — MONUMENTUM DIGITALE
-   Ancient Carved Stone Tablet & Epigraphic Architecture
+   Classical Stone Stele & Antique Epigraphic Typography
    ========================================================================== */
 
 :root {
-  --mineral-basalt: #0a0a09;
-  --mineral-slate: #161616;
-  --mineral-granite: #262523;
-  --mineral-limestone: #d8d2c4;
-  --mineral-chalk: #e5e0d8;
-  --mineral-ash: #73716b;
-  --stone-border: #32312d;
-
-  --font-epigraphic: 'Cinzel', 'Times New Roman', serif;
-  --font-body: 'EB Garamond', 'Cormorant Garamond', Garamond, serif;
-  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+  --antique-slate: #222325;
+  --antique-basalt: #141516;
+  --antique-limestone: #e4e2dd;
+  --antique-olive: #9c9679;
+  --antique-bronze: #6a6344;
+  --antique-chalk: #d8d2c4;
+  --antique-ash: #8c867a;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@font-face {
+  font-family: 'Antique';
+  src: local('Cinzel Decorative'), local('Cinzel'), serif;
+  font-weight: 700 900;
+  font-display: swap;
 }
 
 html, body {
-  background-color: var(--mineral-basalt);
-  color: var(--mineral-chalk);
-  font-family: var(--font-body);
-  letter-spacing: 0.015em;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* Epigraphic Inscriptions */
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-epigraphic);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  text-shadow: -1px -1px 0 rgba(0, 0, 0, 0.95), 1px 1px 0 rgba(255, 255, 255, 0.08);
+  background-color: var(--antique-basalt);
+  color: var(--antique-chalk);
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
 }
