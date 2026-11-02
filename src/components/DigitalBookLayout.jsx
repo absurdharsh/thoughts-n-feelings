@@ -60,7 +60,8 @@ export default function DigitalBookLayout({
 
       if (sortBy === 'popular') {
         const getLikeCount = (id) => {
-          const item = likesData && likesData[id];
+          const targetId = String(id || '');
+          const item = likesData && (likesData[targetId] || likesData[id]);
           if (Array.isArray(item)) return item.length;
           if (item && typeof item === 'object') return item.count || (item.likedBy ? item.likedBy.length : 0);
           return 0;
@@ -205,7 +206,8 @@ export default function DigitalBookLayout({
           </div>
         ) : (
           filteredEntries.map((entry, index) => {
-            const entryLikes = (likesData && likesData[entry.id]) || [];
+            const entryIdStr = String(entry.id);
+            const entryLikes = (likesData && (likesData[entryIdStr] || likesData[entry.id])) || [];
             const voterList = Array.isArray(entryLikes)
               ? entryLikes
               : (entryLikes && entryLikes.likedBy ? entryLikes.likedBy : []);
