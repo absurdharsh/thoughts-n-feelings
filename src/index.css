@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #08090c;
+    color: #e8e4dc;
+    font-family: 'JetBrains Mono', monospace;
+    overflow-x: hidden;
+  }
+
+  /* Custom buttery smooth scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #08090c;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #232936;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #c5a059;
+  }
+}
+
+/* Custom Text Selection */
+::selection {
+  background: rgba(197, 160, 89, 0.35);
+  color: #ffffff;
+}
+
+/* Phosphor Glow classes */
+.phosphor-glow-gold {
+  text-shadow: 0 0 10px rgba(197, 160, 89, 0.5), 0 0 20px rgba(197, 160, 89, 0.2);
+}
+
+.phosphor-glow-green {
+  text-shadow: 0 0 10px rgba(0, 255, 102, 0.5), 0 0 20px rgba(0, 255, 102, 0.2);
+}
+
+.phosphor-glow-amber {
+  text-shadow: 0 0 10px rgba(255, 176, 0, 0.5), 0 0 20px rgba(255, 176, 0, 0.2);
+}
+
+/* Book Crease Shadow */
+.book-crease {
+  box-shadow: inset 18px 0 30px -15px rgba(0, 0, 0, 0.9), inset -18px 0 30px -15px rgba(0, 0, 0, 0.9);
+}
+
