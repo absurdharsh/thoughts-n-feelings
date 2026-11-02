@@ -2,16 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --bg-color: #FFFFFF;
-  --ink-color: #000000;
-}
-
-.dark, html.dark {
-  --bg-color: #000000;
-  --ink-color: #FFFFFF;
-}
-
 @layer base {
   html, body {
     margin: 0;
@@ -56,32 +46,6 @@
   .dark ::-webkit-scrollbar-thumb {
     background: #FFFFFF;
   }
-}
-
-/* Paper Knockout Halo & Automatic Contrast Inversion
-   Guarantees text never clashes with overlapping background strokes, ribbons, or textures */
-.hero-title {
-  paint-order: stroke fill;
-  -webkit-text-stroke: 10px var(--bg-color);
-  text-shadow: 0 0 1px var(--bg-color);
-}
-
-.hero-subtitle {
-  paint-order: stroke fill;
-  -webkit-text-stroke: 6px var(--bg-color);
-  text-shadow: 0 0 1px var(--bg-color);
-}
-
-.cta-link, .paper-halo {
-  paint-order: stroke fill;
-  -webkit-text-stroke: 4px var(--bg-color);
-  text-shadow: 0 0 1px var(--bg-color);
-}
-
-/* Optional Contrast Inversion Layer */
-.contrast-difference {
-  color: #FFFFFF;
-  mix-blend-mode: difference;
 }
 
 /* Binary High Contrast Selection */

@@ -18,12 +18,10 @@ export default function App() {
 
   const [entries, setEntries] = useState(() => {
     try {
-      const saved = localStorage.getItem('thoughts_sketchbook_entries_v3');
+      const saved = localStorage.getItem('thoughts_sketchbook_entries_v2');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length >= INITIAL_ENTRIES.length) {
-          return parsed;
-        }
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch {}
     return INITIAL_ENTRIES;
@@ -47,7 +45,7 @@ export default function App() {
   // Sync entries to local storage
   useEffect(() => {
     try {
-      localStorage.setItem('thoughts_sketchbook_entries_v3', JSON.stringify(entries));
+      localStorage.setItem('thoughts_sketchbook_entries_v2', JSON.stringify(entries));
     } catch {}
   }, [entries]);
 

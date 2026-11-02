@@ -8,7 +8,7 @@
   --ink-color: #000000;
 }
 
-.dark, html.dark {
+.dark {
   --bg-color: #000000;
   --ink-color: #FFFFFF;
 }
@@ -19,23 +19,4 @@ body {
   font-family: 'Patrick Hand', cursive;
   margin: 0;
   padding: 0;
-}
-
-/* Paper Knockout Halo & Contrast Protection */
-.hero-title {
-  paint-order: stroke fill;
-  -webkit-text-stroke: 10px var(--bg-color);
-  text-shadow: 0 0 1px var(--bg-color);
-}
-
-.hero-subtitle {
-  paint-order: stroke fill;
-  -webkit-text-stroke: 6px var(--bg-color);
-  text-shadow: 0 0 1px var(--bg-color);
-}
-
-.cta-link, .paper-halo {
-  paint-order: stroke fill;
-  -webkit-text-stroke: 4px var(--bg-color);
-  text-shadow: 0 0 1px var(--bg-color);
 }
