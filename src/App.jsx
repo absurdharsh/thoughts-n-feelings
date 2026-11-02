@@ -8,12 +8,11 @@ import RetroStatusBar from './components/RetroStatusBar';
 import InteractiveTerminalLog from './components/InteractiveTerminalLog';
 import { INITIAL_ENTRIES } from './data/initialThoughts';
 import { sound } from './utils/audio';
-import { Terminal, Github, Heart, BookOpen, ExternalLink } from 'lucide-react';
 
 export default function App() {
   const [entries, setEntries] = useState(() => {
     try {
-      const saved = localStorage.getItem('thoughts_entries');
+      const saved = localStorage.getItem('thoughts_entries_monument');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -23,14 +22,14 @@ export default function App() {
   });
 
   const [soundEnabled, setSoundEnabled] = useState(false);
-  const [crtEnabled, setCrtEnabled] = useState(true);
-  const [theme, setTheme] = useState('parchment');
+  const [textureEnabled, setTextureEnabled] = useState(true);
+  const [theme, setTheme] = useState('basalt'); // Default: ancient basalt rock
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Sync to localStorage
+  // Sync to local storage
   useEffect(() => {
     try {
-      localStorage.setItem('thoughts_entries', JSON.stringify(entries));
+      localStorage.setItem('thoughts_entries_monument', JSON.stringify(entries));
     } catch {}
   }, [entries]);
 
@@ -40,7 +39,7 @@ export default function App() {
     sound.setMuted(!nextState);
     sound.toggleAmbient(nextState);
     if (nextState) {
-      sound.playClick(1.2);
+      sound.playClick(1.0);
     }
   };
 
@@ -57,27 +56,25 @@ export default function App() {
 
   return (
     <SmoothScrollProvider>
-      <div className={`relative min-h-screen text-[#e8e4dc] theme-${theme} selection:bg-[#c5a059]/40`}>
-        {/* Background Atmosphere: Vanta 3D NET + Reactive Canvas ASCII Filter */}
+      <div className={`relative min-h-screen text-[#e5e0d8] bg-[#0a0a09] theme-${theme} selection:bg-[#32312d] selection:text-[#ffffff]`}>
+        {/* Background Atmosphere: Subdued Basalt Vanta & Ancient Lithic Sediment Shader */}
         <VantaAsciiBackground theme={theme} />
 
-        {/* CRT Scanline & Curvature Simulation */}
-        <CrtOverlay enabled={crtEnabled} theme={theme} />
+        {/* Micro-mineral Stippling & Ancient Chamber Vignette */}
+        <CrtOverlay enabled={textureEnabled} theme={theme} />
 
-        {/* Floating Retro Status Bar & HUD */}
+        {/* Floating Lithic Status Bar & Navigation */}
         <RetroStatusBar
           soundEnabled={soundEnabled}
           onToggleSound={handleToggleSound}
-          crtEnabled={crtEnabled}
-          onToggleCrt={() => setCrtEnabled((v) => !v)}
           currentTheme={theme}
           onChangeTheme={setTheme}
           onOpenNewEntryModal={() => setIsModalOpen(true)}
         />
 
-        {/* Main Content Body */}
+        {/* Main Monolithic Column */}
         <div className="relative z-10 flex flex-col min-h-screen">
-          {/* Header / Hero ASCII Title Banner */}
+          {/* Monumental ASCII Inscription Monolith Hero */}
           <AsciiHeroBanner
             onInscribeClick={() => setIsModalOpen(true)}
             onScrollToLedger={handleScrollToLedger}
@@ -85,58 +82,60 @@ export default function App() {
             onToggleSound={handleToggleSound}
           />
 
-          {/* Infinite Scroll Continuous Parchment Ledger */}
-          <main className="flex-1 pb-24">
+          {/* Slabs & Folios Inscription Strata */}
+          <main className="flex-1 pb-28">
             <DigitalBookLayout
               entries={entries}
               onOpenNewEntryModal={() => setIsModalOpen(true)}
             />
           </main>
 
-          {/* Retro Colophon / Terminal Footer */}
-          <footer className="relative border-t border-zinc-800/80 bg-black/60 backdrop-blur-md py-12 px-4 text-center font-mono text-xs text-zinc-500">
-            <div className="max-w-4xl mx-auto space-y-4">
-              <div className="flex flex-wrap items-center justify-center gap-6 text-zinc-400">
+          {/* Ancient Epigraphic Colophon & Footer */}
+          <footer className="relative border-t border-[#1e1d1b] bg-[#070706] py-14 px-4 text-center font-mono text-xs text-[#73716b]">
+            <div className="max-w-4xl mx-auto space-y-5">
+              <div className="flex flex-wrap items-center justify-center gap-6 text-[#94928b] text-[11px] uppercase tracking-widest">
                 <a
                   href="https://www.instagram.com/absurdnigga"
                   target="_blank"
                   rel="noreferrer"
-                  className="hover:text-[#c5a059] transition-colors flex items-center space-x-1"
+                  className="hover:text-[#ffffff] transition-colors flex items-center space-x-1.5"
                 >
-                  <Heart className="w-3.5 h-3.5 text-rose-400" />
+                  <span>‡</span>
                   <span>absurdharsh</span>
                 </a>
-                <span>•</span>
-                <span className="text-zinc-500">ishika's theorem & clare harner</span>
-                <span>•</span>
+                <span>&bull;</span>
+                <span className="text-[#5e5c56]">Ishika's Theorem on Consumption</span>
+                <span>&bull;</span>
+                <span className="text-[#5e5c56]">Clare Harner (Immortality 1934)</span>
+                <span>&bull;</span>
                 <a
-                  href="https://github.com"
+                  href="https://github.com/absurdharsh/thoughts-n-feelings"
                   target="_blank"
                   rel="noreferrer"
-                  className="hover:text-[#c5a059] transition-colors flex items-center space-x-1"
+                  className="hover:text-[#ffffff] transition-colors"
                 >
-                  <Github className="w-3.5 h-3.5" />
-                  <span>thoughts-n-feelings</span>
+                  GitHub Codex
                 </a>
               </div>
 
-              <div className="text-[11px] text-zinc-600">
-                <pre className="font-mono inline-block">
-{`+-------------------------------------------------------------+
-| RETRO-FUTURISTIC CODEX // GSAP & LENIS SYNCHRONIZED ARCHIVE  |
-| "i think more than i feel, so don't expect frequent updates" |
-+-------------------------------------------------------------+`}
+              <div className="text-[10px] text-[#52504a]">
+                <pre className="font-mono inline-block text-left opacity-80">
+{`+================================================================+
+| MONUMENTUM DIGITALE &bull; ANNO DOMINI MMXXVI                     |
+| "i think more than i feel, so don't expect frequent updates"   |
+| Chiseled with Lenis Inertia, Three.js Lithic Dust & Basalt CSS |
++================================================================+`}
                 </pre>
               </div>
 
-              <p className="text-[10px] text-zinc-600">
-                Designed with continuous parchment folding, Three.js Net, dynamic ASCII canvas filter, and Lenis inertia physics.
+              <p className="text-[10px] text-[#42403b] tracking-wider uppercase font-serif italic">
+                Non omnis moriar &bull; Not all of me shall die &bull; Inscribed upon permanent mineral memory
               </p>
             </div>
           </footer>
         </div>
 
-        {/* Modal: Interactive Terminal Inscription */}
+        {/* Modal: Chisel Inscription into Stele */}
         <InteractiveTerminalLog
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
@@ -147,4 +146,3 @@ export default function App() {
     </SmoothScrollProvider>
   );
 }
-

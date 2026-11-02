@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import Lenis from 'lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -15,27 +15,26 @@ export default function SmoothScrollProvider({ children }) {
     // 1. Register GSAP ScrollTrigger
     gsap.registerPlugin(ScrollTrigger);
 
-    // 2. Initialize Lenis with weighted momentum
+    // 2. Configure Lenis with monumental stone slab physics (weighted, heavy deceleration)
     const lenis = new Lenis({
-      duration: 1.25,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      lerp: 0.058, // Heavy deliberate inertia (stone tablet shifting)
       orientation: 'vertical',
       gestureOrientation: 'vertical',
       smoothWheel: true,
-      wheelMultiplier: 1.0,
-      touchMultiplier: 1.8,
+      wheelMultiplier: 0.88,
+      touchMultiplier: 1.25,
       infinite: false,
     });
 
     setLenisInstance(lenis);
 
-    // Synchronize Lenis scroll with GSAP ScrollTrigger
+    // Synchronize Lenis scroll position with GSAP ScrollTrigger
     lenis.on('scroll', (e) => {
       ScrollTrigger.update();
       setScrollProgress(e.progress || 0);
     });
 
-    // Feed Lenis into GSAP's internal ticker
+    // Synchronize into GSAP's high-precision internal ticker
     const tickerCallback = (time) => {
       lenis.raf(time * 1000);
     };
@@ -56,4 +55,3 @@ export default function SmoothScrollProvider({ children }) {
     </LenisContext.Provider>
   );
 }
-

@@ -1,14 +1,13 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Filter, Search, Bookmark, Sparkles, SlidersHorizontal, BookOpen } from 'lucide-react';
 import JournalEntryCard from './JournalEntryCard';
 import { sound } from '../utils/audio';
 
 export default function DigitalBookLayout({ entries, onOpenNewEntryModal }) {
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [onlyMarked, setOnlyMarked] = useState(false);
 
   const containerRef = useRef(null);
 
@@ -17,7 +16,7 @@ export default function DigitalBookLayout({ entries, onOpenNewEntryModal }) {
     return entries.filter((entry) => {
       const matchesFilter =
         activeFilter === 'all' || entry.type === activeFilter;
-      const matchesFavorites = onlyFavorites ? entry.starred : true;
+      const matchesMarked = onlyMarked ? entry.starred : true;
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
@@ -26,36 +25,36 @@ export default function DigitalBookLayout({ entries, onOpenNewEntryModal }) {
         entry.author.toLowerCase().includes(q) ||
         (entry.tags && entry.tags.some((t) => t.toLowerCase().includes(q)));
 
-      return matchesFilter && matchesFavorites && matchesSearch;
+      return matchesFilter && matchesMarked && matchesSearch;
     });
-  }, [entries, activeFilter, searchQuery, onlyFavorites]);
+  }, [entries, activeFilter, searchQuery, onlyMarked]);
 
   // Group entries by chapter
   const groupedByChapter = useMemo(() => {
     const groups = {};
     filteredEntries.forEach((entry) => {
-      const ch = entry.chapter || 'UNCLASSIFIED REFLECTIONS';
+      const ch = entry.chapter || 'LIBER UNIVERSALIS';
       if (!groups[ch]) groups[ch] = [];
       groups[ch].push(entry);
     });
     return groups;
   }, [filteredEntries]);
 
-  // GSAP reveal animations for chapter headers
+  // GSAP reveal animations for monumental chapter banners
   useEffect(() => {
     const headers = document.querySelectorAll('.chapter-banner');
     headers.forEach((header) => {
       gsap.fromTo(
         header,
-        { opacity: 0, y: 30 },
+        { opacity: 0, y: 25 },
         {
           opacity: 1,
           y: 0,
-          duration: 0.8,
-          ease: 'power3.out',
+          duration: 0.7,
+          ease: 'power2.out',
           scrollTrigger: {
             trigger: header,
-            start: 'top 85%',
+            start: 'top 88%',
             toggleActions: 'play none none reverse',
           },
         }
@@ -64,165 +63,142 @@ export default function DigitalBookLayout({ entries, onOpenNewEntryModal }) {
   }, [groupedByChapter]);
 
   const handleFilterChange = (filter) => {
-    sound.playClick(1.1);
+    sound.playClick(1.15);
     setActiveFilter(filter);
   };
 
   return (
-    <section id="digital-ledger" ref={containerRef} className="relative w-full max-w-5xl mx-auto px-3 sm:px-6 py-12">
-      {/* Book Binding Top Spine Bar */}
-      <div className="relative mb-10 p-4 rounded-t-xl bg-[#12151c]/90 border-t-2 border-x-2 border-[#c5a059]/40 shadow-2xl backdrop-blur-md">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 pb-4">
+    <section id="digital-ledger" ref={containerRef} className="relative w-full max-w-4xl mx-auto px-4 py-8">
+      {/* Monumental Stone Architrave / Top Header Slab */}
+      <div className="stone-slab stone-grain p-5 mb-8 border border-[#2e2d29]">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#22211f] pb-4">
           <div className="flex items-center space-x-3">
-            <BookOpen className="w-5 h-5 text-[#c5a059]" />
-            <span className="font-serif text-lg font-bold text-[#e5d7ba] tracking-wider uppercase">
-              The Digital Codex & Folio
-            </span>
+            <span className="font-mono text-sm text-[#73716b]">‡</span>
+            <h2 className="font-display text-sm sm:text-base font-bold tracking-[0.25em] text-[#e5e0d8] uppercase carved-text">
+              ARCHIVUM LAPIDARIS &bull; BASALT STRATA
+            </h2>
           </div>
-          <div className="font-mono text-xs text-zinc-400 flex items-center space-x-4">
-            <span>BINDING: CONTINUOUS PARCHMENT</span>
-            <span className="text-[#c5a059]">FOLIOS: {entries.length}</span>
+          <div className="font-mono text-[10px] text-[#73716b] tracking-widest flex items-center space-x-4 uppercase">
+            <span>INSCRIPTIONS: {entries.length}</span>
+            <span>&bull;</span>
+            <span className="text-[#a39f96]">FILTERED: {filteredEntries.length}</span>
           </div>
         </div>
 
-        {/* Filter Controls & Search Bar */}
+        {/* Filter Slabs & Search Trough */}
         <div className="mt-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          {/* Category Tabs */}
+          {/* Classification Slabs */}
           <div className="flex flex-wrap items-center gap-1.5 font-mono text-xs">
             {[
-              { id: 'all', label: `ALL (${entries.length})` },
-              { id: 'thought', label: `THOUGHTS (${entries.filter(e => e.type === 'thought').length})` },
-              { id: 'feeling', label: `FEELINGS (${entries.filter(e => e.type === 'feeling').length})` },
-              { id: 'quote', label: `QUOTES (${entries.filter(e => e.type === 'quote').length})` },
+              { id: 'all', label: `ALL STELES (${entries.length})` },
+              { id: 'thought', label: `COGITATIO (${entries.filter(e => e.type === 'thought').length})` },
+              { id: 'feeling', label: `SENTIENTIA (${entries.filter(e => e.type === 'feeling').length})` },
+              { id: 'quote', label: `MONUMENTA (${entries.filter(e => e.type === 'quote').length})` },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => handleFilterChange(tab.id)}
-                className={`px-3 py-1.5 rounded transition-all duration-200 ${
-                  activeFilter === tab.id
-                    ? 'bg-[#c5a059] text-black font-bold shadow-md'
-                    : 'bg-zinc-900/90 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-zinc-800'
-                }`}
+                className={`stone-btn px-3 py-1.5 text-[10px] sm:text-[11px] tracking-wider uppercase ${activeFilter === tab.id ? 'bg-[#262522] border-[#44423d] text-[#ffffff]' : 'text-[#858279]'}`}
               >
-                [{tab.label}]
+                {tab.label}
               </button>
             ))}
-
-            <button
-              onClick={() => {
-                sound.playClick(1.3);
-                setOnlyFavorites(!onlyFavorites);
-              }}
-              className={`px-3 py-1.5 rounded transition-all duration-200 flex items-center space-x-1 border ${
-                onlyFavorites
-                  ? 'bg-amber-400/20 text-amber-300 border-amber-400/50'
-                  : 'bg-zinc-900/90 text-zinc-400 hover:text-zinc-200 border-zinc-800'
-              }`}
-            >
-              <Bookmark className={`w-3.5 h-3.5 ${onlyFavorites ? 'fill-amber-400' : ''}`} />
-              <span>STARRED</span>
-            </button>
           </div>
 
-          {/* Retro Search Input */}
-          <div className="relative min-w-[240px]">
-            <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          {/* Search Stone Inset */}
+          <div className="relative">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Query thoughts, quotes, or tags..."
-              className="w-full pl-9 pr-3 py-1.5 rounded bg-black/60 border border-zinc-800 focus:border-[#c5a059] focus:outline-none text-xs font-mono text-zinc-200 placeholder-zinc-600 transition-colors"
+              placeholder="SEARCH STONE GLYPHS..."
+              className="w-full md:w-56 px-3 py-1.5 bg-[#0a0a09] border border-[#22211f] stone-inset text-[11px] font-mono text-[#d8d2c4] placeholder-[#5a5852] focus:outline-none focus:border-[#44423d] tracking-wider uppercase"
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 text-xs font-mono"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-mono text-[#73716b] hover:text-[#d8d2c4]"
               >
-                ×
+                &times;
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Parchment Infinite Stream Canvas Container */}
-      <div className="relative border-x-2 border-b-2 border-[#c5a059]/30 rounded-b-xl bg-[#090b0f]/80 backdrop-blur-md px-3 sm:px-8 py-6 shadow-2xl">
-        {/* Continuous Book Spine Visual Marker on the Left */}
-        <div className="absolute left-2 sm:left-4 top-0 bottom-0 w-px bg-dashed border-l border-zinc-800/80 pointer-events-none" />
-
-        {/* Empty state if search has no results */}
-        {filteredEntries.length === 0 && (
-          <div className="py-20 text-center font-mono">
-            <div className="text-zinc-600 text-4xl mb-3">¯\_(ツ)_/¯</div>
-            <p className="text-zinc-400 text-sm">NO INSCRIBED THOUGHTS MATCH YOUR QUERY.</p>
-            <button
-              onClick={() => {
-                setActiveFilter('all');
-                setSearchQuery('');
-                setOnlyFavorites(false);
-              }}
-              className="mt-4 px-4 py-2 rounded bg-zinc-800 text-zinc-300 text-xs hover:bg-zinc-700 font-mono transition-colors"
-            >
-              RESET FILTERS
-            </button>
-          </div>
-        )}
-
-        {/* Chapter Stream */}
-        {Object.entries(groupedByChapter).map(([chapterTitle, chapterEntries], chapterIndex) => (
-          <div key={chapterTitle} className="mb-14 last:mb-4">
-            {/* Chapter Header Banner with ASCII styling */}
-            <div className="chapter-banner my-6 select-none">
-              <div className="flex items-center space-x-3 text-zinc-600 font-mono text-xs">
-                <span>+======================================================+</span>
-              </div>
-              <div className="py-2 flex items-center justify-between">
-                <h2 className="font-mono text-sm sm:text-base font-bold text-[#c5a059] tracking-wider uppercase flex items-center space-x-2">
-                  <span className="text-zinc-600">&gt;&gt;</span>
-                  <span>{chapterTitle}</span>
-                </h2>
-                <span className="font-mono text-xs text-zinc-500">
-                  {chapterEntries.length} {chapterEntries.length === 1 ? 'FOLIO' : 'FOLIOS'}
+      {/* Chapters & Thought Folios */}
+      <div className="space-y-12">
+        {Object.entries(groupedByChapter).map(([chapterName, chapterEntries]) => (
+          <div key={chapterName} className="relative">
+            {/* Monumental Chapter Header Bar */}
+            <div className="chapter-banner mb-6 p-4 bg-[#0e0e0d] border border-[#262522] stone-beveled select-none">
+              <div className="flex items-center justify-between text-xs font-mono text-[#73716b] mb-1">
+                <span className="tracking-[0.25em] text-[#a39f96] font-display text-[11px] uppercase">
+                  {chapterName}
+                </span>
+                <span className="text-[10px] tracking-widest uppercase">
+                  [{chapterEntries.length} {chapterEntries.length === 1 ? 'STELE' : 'STELES'}]
                 </span>
               </div>
-              <div className="flex items-center space-x-3 text-zinc-600 font-mono text-xs">
-                <span>+======================================================+</span>
-              </div>
+              <div className="w-full h-[1px] bg-gradient-to-r from-[#32312d] via-[#1a1a18] to-transparent" />
             </div>
 
-            {/* List of Entries in this Chapter */}
+            {/* Inscribed Folio Cards */}
             <div className="space-y-6">
               {chapterEntries.map((entry, idx) => (
                 <JournalEntryCard
                   key={entry.id}
                   entry={entry}
                   index={idx}
-                  isInitiallyOpen={idx === 0 || chapterIndex === 0}
+                  isInitiallyOpen={true}
                 />
               ))}
             </div>
           </div>
         ))}
 
-        {/* Infinite Scroll End of Parchment Marker */}
-        <div className="pt-10 pb-6 text-center select-none font-mono text-xs text-zinc-500 border-t border-zinc-800/80">
-          <div className="text-[#c5a059] mb-2 tracking-widest">[ END OF CURRENT PARCHMENT ROLL ]</div>
-          <p className="text-zinc-600 text-[11px] mb-4">
-            Consciousness is unbounded. You may add your own thoughts to the local ledger.
-          </p>
-          <button
-            onClick={() => {
-              sound.playClick(1.2);
-              onOpenNewEntryModal();
-            }}
-            className="px-5 py-2.5 rounded bg-[#c5a059]/15 hover:bg-[#c5a059]/25 border border-[#c5a059]/50 text-[#e5d7ba] font-mono text-xs tracking-wider transition-all duration-200"
-          >
-            + INSCRIBE YOUR OWN THOUGHT
-          </button>
+        {filteredEntries.length === 0 && (
+          <div className="p-12 text-center stone-slab border border-[#262522]">
+            <p className="font-display tracking-[0.2em] text-[#73716b] uppercase text-sm mb-4">
+              NO STONE INSCRIPTIONS FOUND FOR THIS QUERY
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveFilter('all');
+                setSearchQuery('');
+              }}
+              className="stone-btn px-4 py-2 font-mono text-xs uppercase"
+            >
+              RESET STRATA FILTERS
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Stone Inscribe Invitation */}
+      <div className="mt-14 p-8 text-center stone-slab stone-grain border border-[#2a2925]">
+        <div className="font-mono text-xs text-[#73716b] tracking-widest uppercase mb-2">
+          ‡ ADDENDUM AD CODICEM ‡
         </div>
+        <h3 className="font-display text-lg sm:text-xl font-bold tracking-widest text-[#e5e0d8] carved-text uppercase mb-3">
+          Leave Your Inscription Upon The Basalt
+        </h3>
+        <p className="font-serif italic text-sm text-[#94928b] max-w-lg mx-auto mb-6">
+          “Words spoken into air vanish with the wind. Thoughts chiseled into stone endure past empires and monuments.”
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            sound.playClick(1.2);
+            onOpenNewEntryModal();
+          }}
+          className="stone-btn px-8 py-3 font-display tracking-[0.2em] text-xs uppercase text-[#ffffff]"
+        >
+          INSCRIBE NEW FOLIO ✍
+        </button>
       </div>
     </section>
   );
 }
-

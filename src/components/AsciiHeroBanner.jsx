@@ -1,208 +1,168 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Terminal, Sparkles, BookOpen, Volume2, VolumeX, Eye, Shield, ArrowDown, PenTool } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { sound } from '../utils/audio';
 
-const ASCII_LOGO_LARGE = `
-  _   _                       _     _                  __           _ _                 
- | |_| |__   ___  _   _  __ _| |__ | |_ ___       _ __  / _| ___  ___| (_)_ __   __ _ ___ 
- | __| '_ \\ / _ \\| | | |/ _\` | '_ \\| __/ __| ____| '_ \\| |_ / _ \\/ _ \\ | | '_ \\ / _\` / __|
- | |_| | | | (_) | |_| | (_| | | | | |_\\__ \\_____| | | |  _|  __/  __/ | | | | | (_| \\__ \\
-  \\__|_| |_|\\___/ \\__,_|\\__, |_| |_|\\__|___/     |_| |_|_|  \\___|\\___|_|_|_| |_|\\__, |___/
-                        |___/                                                   |___/     
+const MONUMENTAL_ASCII_HEADER = `
+  +==============================================================================+
+  |                                                                              |
+  |   ████████╗██╗  ██╗ ██████╗ ██╗   ██╗ ██████╗ ██╗  ██╗████████╗███████╗      |
+  |   ╚══██╔══╝██║  ██║██╔═══██╗██║   ██║██╔════╝ ██║  ██║╚══██╔══╝██╔════╝      |
+  |      ██║   ███████║██║   ██║██║   ██║██║  ███╗███████║   ██║   ███████╗      |
+  |      ██║   ██╔══██║██║   ██║██║   ██║██║   ██║██╔══██║   ██║   ╚════██║      |
+  |      ██║   ██║  ██║╚██████╔╝╚██████╔╝╚██████╔╝██║  ██║   ██║   ███████║      |
+  |      ╚═╝   ╚═╝  ╚═╝ ╚═════╝  ╚═════╝  ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝      |
+  |                                                                              |
+  |                     T H O U G H T S   ' N '   F E E L I N G S                |
+  |                         M O N U M E N T U M   D I G I T A L E                |
+  |                   A N N O   M M X X V I   &bull;   A B S U R D H A R S H     |
+  +==============================================================================+
 `;
 
-const ASCII_LOGO_SMALL = `
- +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- |  T H O U G H T S  -  N  -  F E E L I N G S  |
- +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-`;
-
-const MOTTO_CYCLES = [
-  "unfiltered consciousness dumped straight into the parchment buffer.",
-  "i think more than i feel so don't expect frequent updates lowk.",
-  "we hear not even a leaf can fall without God's will. so why prosecute my sins?",
-  "plants get value from animals, animals from us, and we are eaten by God.",
-  "watch me as i come to life when someone takes your name on my grave.",
-  "one thing i do wanna do is that i want to make this pretty with css so we DOING THAT SHIT FRFR."
+const MONUMENT_MOTTOES = [
+  "Not even a leaf can fall without divine decree. So why prosecute my sins?",
+  "Plants nourish animals, animals nourish humans, and humans are consumed by God.",
+  "Watch me as I come to life when someone speaks your name upon my grave.",
+  "I think more than I feel, so do not expect frequent updates upon this stone.",
+  "Even your shadow departs from you when surrounded by darkness.",
+  "Do not stand by my grave and weep; I am not there, I did not die."
 ];
 
 export default function AsciiHeroBanner({ 
   onInscribeClick, 
   onScrollToLedger, 
   soundEnabled, 
-  onToggleSound,
-  themeColor = '#c5a059'
+  onToggleSound 
 }) {
-  const [textIndex, setTextIndex] = useState(0);
+  const [mottoIndex, setMottoIndex] = useState(0);
   const [displayText, setDisplayText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-  const [glitchTitle, setGlitchTitle] = useState(false);
-  const [cursorBlink, setCursorBlink] = useState(true);
+  const [chiseled, setChiseled] = useState(false);
 
-  // Typewriter effect for motto
+  // Slow, solemn stone chisel typewriter reveal
   useEffect(() => {
-    const currentMotto = MOTTO_CYCLES[textIndex];
+    const currentMotto = MONUMENT_MOTTOES[mottoIndex];
     let timer;
 
     if (!isDeleting && displayText.length < currentMotto.length) {
       timer = setTimeout(() => {
         setDisplayText(currentMotto.slice(0, displayText.length + 1));
-      }, 35);
+      }, 42);
     } else if (!isDeleting && displayText.length === currentMotto.length) {
-      timer = setTimeout(() => setIsDeleting(true), 3800);
+      timer = setTimeout(() => setIsDeleting(true), 4200);
     } else if (isDeleting && displayText.length > 0) {
       timer = setTimeout(() => {
         setDisplayText(currentMotto.slice(0, displayText.length - 1));
-      }, 18);
+      }, 20);
     } else if (isDeleting && displayText.length === 0) {
       setIsDeleting(false);
-      setTextIndex((prev) => (prev + 1) % MOTTO_CYCLES.length);
+      setMottoIndex((prev) => (prev + 1) % MONUMENT_MOTTOES.length);
     }
 
     return () => clearTimeout(timer);
-  }, [displayText, isDeleting, textIndex]);
+  }, [displayText, isDeleting, mottoIndex]);
 
-  // Blinking cursor timer
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCursorBlink((v) => !v);
-    }, 530);
-    return () => clearInterval(interval);
-  }, []);
-
-  const triggerGlitch = () => {
-    sound.playClick(1.4);
-    setGlitchTitle(true);
-    setTimeout(() => setGlitchTitle(false), 240);
+  const handleChiselStrike = () => {
+    sound.playClick(1.0);
+    setChiseled(true);
+    setTimeout(() => setChiseled(false), 220);
   };
 
   return (
-    <header id="hero" className="relative min-h-[92vh] flex flex-col justify-center items-center px-4 py-16 text-center select-none overflow-hidden">
-      {/* Decorative Top Border Bar */}
-      <div className="w-full max-w-4xl mx-auto mb-6 flex items-center justify-between text-xs font-mono text-zinc-500 border-b border-zinc-800/80 pb-2">
-        <div className="flex items-center space-x-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-          <span className="text-zinc-400">LEDGER://THOUGHTS-N-FEELINGS.LOG</span>
+    <header id="hero" className="relative min-h-[90vh] flex flex-col justify-center items-center px-4 py-16 text-center select-none">
+      {/* Top Epigraphic Ledger Header */}
+      <div className="w-full max-w-4xl mx-auto mb-6 flex items-center justify-between font-mono text-[11px] text-[#73716b] border-b border-[#262523] pb-2.5">
+        <div className="flex items-center space-x-2.5">
+          <span className="w-1.5 h-1.5 bg-[#d8d2c4] rounded-none opacity-80" />
+          <span className="tracking-[0.2em] uppercase text-[#a39f96]">TABULA I &bull; EX ARCHIVO BASALTICO</span>
         </div>
-        <div className="hidden sm:flex items-center space-x-4">
-          <span>PORT: 5173</span>
-          <span>PARCHMENT_STATE: FLUID</span>
-          <span className="text-[#c5a059]">v2.4.0-DEV</span>
+        <div className="hidden sm:flex items-center space-x-4 tracking-widest text-[#73716b]">
+          <span>STATUS: PETRIFICATUS</span>
+          <span>&bull;</span>
+          <span>ORDO: CHRONOLOGICUS</span>
         </div>
       </div>
 
-      {/* Retro Book & Terminal Frame Box */}
+      {/* Main Basalt Stele Monolith */}
       <div 
-        onClick={triggerGlitch}
-        className="w-full max-w-4xl mx-auto p-4 sm:p-8 rounded-lg bg-black/40 backdrop-blur-md border border-[#c5a059]/30 shadow-[0_0_50px_rgba(197,160,89,0.06)] hover:border-[#c5a059]/60 transition-all duration-300 cursor-pointer group"
+        onClick={handleChiselStrike}
+        className={`w-full max-w-4xl mx-auto p-6 sm:p-10 stone-slab stone-grain border border-[#2e2d29] transition-all duration-300 cursor-pointer ${chiseled ? 'scale-[0.998] border-[#44423d]' : 'hover:border-[#3a3934]'}`}
       >
-        {/* Frame corner brackets */}
-        <div className="relative">
-          <div className="text-zinc-600 font-mono text-xs text-left mb-2 flex justify-between items-center">
-            <span>+--[ PROTOCOL: ANTHROPOLOGY_OF_MIND ]-------------------------+</span>
-            <span className="text-zinc-500 hidden md:inline">CLICK TO GLITCH</span>
-          </div>
+        {/* Stele Top Keystone / Architectural Header */}
+        <div className="flex justify-between items-center text-[10px] font-mono text-[#73716b] border-b border-[#22211f] pb-3 mb-6">
+          <span className="tracking-widest">‡ CODEX LAPIDARIS ‡</span>
+          <span className="tracking-widest font-serif text-[#94928b]">EPIGRAPHIA ABSURDHARSH</span>
+          <span className="tracking-widest">‡ MCMXXVI ‡</span>
+        </div>
 
-          {/* ASCII Banner - Desktop Large */}
-          <pre 
-            className={`hidden md:block font-mono text-[10.5px] leading-[13px] tracking-tight whitespace-pre font-bold transition-all duration-150 ${
-              glitchTitle 
-                ? 'text-red-400 translate-x-1 skew-x-2 blur-[0.5px]' 
-                : 'text-[#c5a059] group-hover:text-[#e5d7ba]'
-            }`}
-            style={{ textShadow: '0 0 12px rgba(197, 160, 89, 0.4)' }}
-          >
-            {ASCII_LOGO_LARGE}
+        {/* Monumental ASCII Slab (Responsive) */}
+        <div className="overflow-x-auto py-2">
+          <pre className="font-mono text-[9px] sm:text-[11px] md:text-[12px] leading-[1.25] text-[#d8d2c4] carved-text font-bold inline-block mx-auto select-none opacity-95">
+{MONUMENTAL_ASCII_HEADER}
           </pre>
+        </div>
 
-          {/* ASCII Banner - Mobile Compact */}
-          <pre 
-            className={`block md:hidden font-mono text-xs leading-tight whitespace-pre font-bold text-[#c5a059] ${
-              glitchTitle ? 'text-red-400 translate-x-1' : ''
-            }`}
+        {/* Subtitle / Architectural Inscription */}
+        <div className="my-6 space-y-2">
+          <p className="font-display text-xs sm:text-sm tracking-[0.28em] text-[#94928b] uppercase">
+            A Living Monument of Consciousness, Paradox & Mortality
+          </p>
+          <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-[#44423d] to-transparent mx-auto my-3" />
+        </div>
+
+        {/* Chiseled Motto Typewriter Display */}
+        <div className="min-h-[58px] flex items-center justify-center px-4 py-3 bg-[#0d0d0c] border border-[#22211f] stone-inset">
+          <span className="font-mono text-xs text-[#73716b] mr-2">§</span>
+          <p className="font-serif italic text-base sm:text-lg text-[#e5e0d8] carved-text max-w-2xl leading-relaxed">
+            “{displayText}”<span className="inline-block w-1.5 h-4 bg-[#d8d2c4] ml-1 translate-y-[2px] animate-pulse" />
+          </p>
+          <span className="font-mono text-xs text-[#73716b] ml-2">§</span>
+        </div>
+
+        {/* Monolithic Action Slabs */}
+        <div className="mt-8 pt-6 border-t border-[#22211f] flex flex-wrap items-center justify-center gap-3 font-mono text-xs">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              sound.playClick(1.2);
+              onInscribeClick();
+            }}
+            className="stone-btn px-6 py-2.5 font-display tracking-widest text-xs uppercase flex items-center space-x-2"
           >
-            {ASCII_LOGO_SMALL}
-          </pre>
+            <span>Inscribe Stone</span>
+            <span className="font-mono text-[10px] text-[#73716b]">✍</span>
+          </button>
 
-          <div className="text-zinc-600 font-mono text-xs text-right mt-2">
-            <span>+--------------------------------------------------------------+</span>
-          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              sound.playFold();
+              onScrollToLedger();
+            }}
+            className="stone-btn px-6 py-2.5 font-display tracking-widest text-xs uppercase flex items-center space-x-2 text-[#94928b]"
+          >
+            <span>Descend into Codex</span>
+            <span className="font-mono text-[10px]">▼</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSound();
+            }}
+            className="stone-btn px-4 py-2.5 font-display tracking-wider text-xs uppercase text-[#73716b] hover:text-[#e5e0d8]"
+            title="Toggle Mineral Resonance"
+          >
+            <span>{soundEnabled ? 'Chamber Resonance [ON]' : 'Resonance [OFF]'}</span>
+          </button>
         </div>
 
-        {/* Dynamic Typewriter Stream */}
-        <div className="mt-6 min-h-[4rem] flex items-center justify-center font-mono text-sm sm:text-base text-zinc-300 max-w-2xl mx-auto px-4">
-          <span className="text-[#c5a059] mr-2 font-bold">&gt;</span>
-          <span className="italic tracking-wide">{displayText}</span>
-          <span 
-            className={`inline-block w-2.5 h-5 ml-1 bg-[#c5a059] align-middle ${
-              cursorBlink ? 'opacity-100' : 'opacity-0'
-            }`} 
-          />
+        {/* Bottom Stone Seal */}
+        <div className="mt-6 text-[9px] font-mono text-[#52504b] tracking-[0.25em] uppercase">
+          [ EX NIHILO NIHIL FIT &bull; CARVED INTO RECTANGULAR BASALT ]
         </div>
-
-        {/* Author & Context Badge */}
-        <div className="mt-4 pt-4 border-t border-zinc-800/60 flex flex-wrap items-center justify-center gap-3 text-xs font-mono text-zinc-400">
-          <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800">
-            Author: <a href="https://www.instagram.com/absurdnigga" target="_blank" rel="noreferrer" className="text-[#c5a059] hover:underline" onClick={(e) => e.stopPropagation()}>absurdharsh</a>
-          </span>
-          <span className="text-zinc-600">•</span>
-          <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800">
-            Inclusions: Ishika's Theorem & Clare Harner
-          </span>
-          <span className="text-zinc-600">•</span>
-          <span className="text-emerald-400 font-semibold">
-            Status: Synchronized Infinite Scroll
-          </span>
-        </div>
-      </div>
-
-      {/* Interactive Action Hub (React.bit magnetic / micro-interactions) */}
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-        <button
-          onClick={() => {
-            sound.playFold();
-            onScrollToLedger();
-          }}
-          className="group relative px-6 py-3 rounded bg-[#c5a059]/10 hover:bg-[#c5a059]/20 border border-[#c5a059]/40 hover:border-[#c5a059] text-[#e5d7ba] font-mono text-xs uppercase tracking-wider transition-all duration-200 flex items-center space-x-2 shadow-lg shadow-[#c5a059]/5 hover:shadow-[#c5a059]/20"
-        >
-          <BookOpen className="w-4 h-4 text-[#c5a059] group-hover:scale-110 transition-transform" />
-          <span>Read Digital Ledger</span>
-          <ArrowDown className="w-3.5 h-3.5 text-[#c5a059] animate-bounce" />
-        </button>
-
-        <button
-          onClick={() => {
-            sound.playClick(1.2);
-            onInscribeClick();
-          }}
-          className="group relative px-6 py-3 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-zinc-500 text-zinc-300 font-mono text-xs uppercase tracking-wider transition-all duration-200 flex items-center space-x-2"
-        >
-          <PenTool className="w-4 h-4 text-emerald-400 group-hover:rotate-12 transition-transform" />
-          <span>Inscribe New Entry</span>
-        </button>
-
-        <button
-          onClick={() => {
-            onToggleSound();
-          }}
-          className={`px-4 py-3 rounded border font-mono text-xs flex items-center space-x-2 transition-all duration-200 ${
-            soundEnabled 
-              ? 'bg-amber-950/30 border-amber-500/60 text-amber-300' 
-              : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'
-          }`}
-          title="Toggle Warm Retro CRT / Ambient Hum"
-        >
-          {soundEnabled ? <Volume2 className="w-4 h-4 text-amber-400 animate-pulse" /> : <VolumeX className="w-4 h-4" />}
-          <span>{soundEnabled ? 'HUM: ACTIVE' : 'HUM: MUTED'}</span>
-        </button>
-      </div>
-
-      {/* Decorative spine scroll indicator */}
-      <div className="mt-12 flex flex-col items-center text-zinc-600 font-mono text-xs space-y-1">
-        <span className="tracking-widest uppercase text-[10px] text-zinc-500">SCROLL TO TURN PARCHMENT</span>
-        <div className="w-px h-8 bg-gradient-to-b from-[#c5a059] to-transparent animate-pulse" />
       </div>
     </header>
   );
 }
-

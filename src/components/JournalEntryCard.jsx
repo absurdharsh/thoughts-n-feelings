@@ -1,7 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
-import { Heart, Share2, Copy, Check, ChevronDown, Sparkles, Terminal, Tag, User } from 'lucide-react';
-import confetti from 'canvas-confetti';
 import { sound } from '../utils/audio';
 
 export default function JournalEntryCard({ entry, index, isInitiallyOpen = true }) {
@@ -9,14 +7,13 @@ export default function JournalEntryCard({ entry, index, isInitiallyOpen = true 
   const [likes, setLikes] = useState(entry.likes || 0);
   const [hasLiked, setHasLiked] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0, active: false });
 
   const contentRef = useRef(null);
   const cardRef = useRef(null);
   const titleRef = useRef(null);
   const scrambleTimerRef = useRef(null);
 
-  // GSAP Accordion unfold / fold animation
+  // GSAP Accordion unfold / fold animation (heavy stone slab movement)
   useEffect(() => {
     if (!contentRef.current) return;
 
@@ -24,14 +21,14 @@ export default function JournalEntryCard({ entry, index, isInitiallyOpen = true 
       gsap.to(contentRef.current, {
         height: 'auto',
         opacity: 1,
-        duration: 0.5,
+        duration: 0.45,
         ease: 'power2.out',
       });
     } else {
       gsap.to(contentRef.current, {
         height: 0,
         opacity: 0,
-        duration: 0.4,
+        duration: 0.35,
         ease: 'power2.inOut',
       });
     }
@@ -45,30 +42,15 @@ export default function JournalEntryCard({ entry, index, isInitiallyOpen = true 
     };
   }, []);
 
-  // Spotlight mouse tracking (React.bit micro-interaction)
-  const handleMouseMove = (e) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    setMousePos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-      active: true,
-    });
-  };
-
-  const handleMouseLeave = () => {
-    setMousePos((prev) => ({ ...prev, active: false }));
-  };
-
-  // Scramble / Decrypt text on hover
-  const scrambleTitle = () => {
+  // Chisel Chipping Rune Reveal (ancient stone brushing micro-interaction)
+  const chiselTitle = () => {
     const titleEl = titleRef.current;
     if (!titleEl) return;
     if (scrambleTimerRef.current) {
       clearInterval(scrambleTimerRef.current);
     }
     const originalText = entry.title;
-    const chars = '01#%&*+<>~_[]';
+    const lithicRunes = '░▒▓§‡◈▲▼᚛᚜01:;+=-_·';
     let iteration = 0;
 
     scrambleTimerRef.current = setInterval(() => {
@@ -76,7 +58,7 @@ export default function JournalEntryCard({ entry, index, isInitiallyOpen = true 
         .split('')
         .map((char, idx) => {
           if (idx < iteration) return originalText[idx];
-          return chars[Math.floor(Math.random() * chars.length)];
+          return lithicRunes[Math.floor(Math.random() * lithicRunes.length)];
         })
         .join('');
 
@@ -86,7 +68,7 @@ export default function JournalEntryCard({ entry, index, isInitiallyOpen = true 
         titleEl.innerText = originalText;
       }
       iteration += 1 / 2;
-    }, 25);
+    }, 28);
   };
 
   const toggleFold = () => {
@@ -94,27 +76,12 @@ export default function JournalEntryCard({ entry, index, isInitiallyOpen = true 
     setIsOpen(!isOpen);
   };
 
-  const handleLike = (e) => {
+  const handleMark = (e) => {
     e.stopPropagation();
-    sound.playClick(1.5);
+    sound.playClick(1.3);
     if (!hasLiked) {
       setLikes(likes + 1);
       setHasLiked(true);
-
-      // Trigger micro retro burst
-      try {
-        confetti({
-          particleCount: 18,
-          spread: 45,
-          origin: {
-            x: e.clientX / window.innerWidth,
-            y: e.clientY / window.innerHeight,
-          },
-          colors: ['#c5a059', '#e5d7ba', '#ffffff'],
-          shapes: ['square'],
-          scalar: 0.7,
-        });
-      } catch {}
     } else {
       setLikes(likes - 1);
       setHasLiked(false);
@@ -123,188 +90,153 @@ export default function JournalEntryCard({ entry, index, isInitiallyOpen = true 
 
   const handleCopy = (e) => {
     e.stopPropagation();
-    sound.playClick(1.8);
-    const textToCopy = `"${entry.content}"\n\n— ${entry.author} (${entry.date})`;
+    sound.playClick(1.6);
+    const textToCopy = `[ ${entry.title.toUpperCase()} ]\n${entry.epigraph ? `(${entry.epigraph})\n\n` : ''}${entry.content}\n\n— Inscribed by ${entry.author} [${entry.date}]`;
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 2200);
   };
 
-  // Type styling
-  const getTypeBadge = () => {
+  // Mineral Lapidary Classification
+  const getTypeClassification = () => {
     switch (entry.type) {
       case 'thought':
-        return { label: 'THOUGHT_LOG', color: 'text-amber-400 border-amber-500/40 bg-amber-950/20' };
+        return { label: 'COGITATIO', epigraph: 'DE RATIONE' };
       case 'feeling':
-        return { label: 'AFFECT_SIGNAL', color: 'text-rose-400 border-rose-500/40 bg-rose-950/20' };
+        return { label: 'SENTIENTIA', epigraph: 'DE AFFECTIBUS' };
       case 'quote':
-        return { label: 'INSCRIPTION', color: 'text-cyan-400 border-cyan-500/40 bg-cyan-950/20' };
+        return { label: 'MONUMENTUM', epigraph: 'EPITAPHIUM' };
       default:
-        return { label: 'LEDGER_ENTRY', color: 'text-[#c5a059] border-[#c5a059]/40 bg-[#c5a059]/10' };
+        return { label: 'INSPECTIO', epigraph: 'DE MEMORIA' };
     }
   };
 
-  const badge = getTypeBadge();
+  const classification = getTypeClassification();
 
   return (
     <article
       ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className="relative my-8 rounded-lg border border-zinc-800/90 bg-[#0d0f14]/85 hover:border-[#c5a059]/50 transition-all duration-300 shadow-xl overflow-hidden group select-text"
-      style={{
-        boxShadow: mousePos.active
-          ? '0 10px 30px -10px rgba(0,0,0,0.7), 0 0 25px rgba(197, 160, 89, 0.08)'
-          : '0 4px 20px rgba(0,0,0,0.5)',
-      }}
+      className="stone-slab stone-grain border border-[#2a2925] mb-6 p-6 sm:p-8 transition-colors duration-200"
     >
-      {/* React.bit Dynamic Spotlight Glow */}
-      {mousePos.active && (
-        <div
-          className="pointer-events-none absolute -inset-px transition-opacity duration-300 opacity-60"
-          style={{
-            background: `radial-gradient(350px circle at ${mousePos.x}px ${mousePos.y}px, rgba(197, 160, 89, 0.12), transparent 80%)`,
-          }}
-        />
-      )}
-
-      {/* Decorative Book Page Spine Stitch Marker on left border */}
-      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-[#c5a059]/40 via-[#c5a059]/80 to-[#c5a059]/40 group-hover:w-2 transition-all duration-300" />
-
-      {/* Paper Crease / Stitching Pattern on left gutter */}
-      <div className="absolute left-2.5 top-0 bottom-0 flex flex-col justify-around py-3 pointer-events-none select-none text-[8px] text-[#c5a059]/30 font-mono">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <span key={i}>:</span>
-        ))}
-      </div>
-
-      {/* Card Header (Accordion Clickable Bar) */}
-      <div 
+      {/* Stone Tablet Header Band */}
+      <header 
         onClick={toggleFold}
-        onMouseEnter={scrambleTitle}
-        className="cursor-pointer pl-7 pr-5 py-4 border-b border-zinc-800/70 flex flex-wrap items-center justify-between gap-3 bg-black/20 select-none"
+        className="cursor-pointer select-none border-b border-[#22211f] pb-5"
       >
-        <div className="flex items-center space-x-3 flex-wrap">
-          {/* Entry ID & Type Badge */}
-          <span className="font-mono text-xs text-zinc-500">[{entry.id}]</span>
-          <span className={`font-mono text-[10px] px-2 py-0.5 rounded border uppercase tracking-wider ${badge.color}`}>
-            {badge.label}
-          </span>
-          <span className="text-zinc-600 hidden sm:inline">•</span>
-          <span className="font-mono text-xs text-zinc-400">{entry.timestamp}</span>
-        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] font-mono text-[#73716b] mb-3">
+          <div className="flex items-center space-x-2.5">
+            <span className="px-2 py-0.5 bg-[#181816] border border-[#2e2d29] text-[#a8a49c] font-bold tracking-widest text-[10px] uppercase">
+              {classification.label}
+            </span>
+            <span className="text-[#4e4d47]">&bull;</span>
+            <span className="tracking-wider uppercase text-[#88857c]">{entry.chapterRoman || 'STELA'}</span>
+          </div>
 
-        {/* Action micro-tools */}
-        <div className="flex items-center space-x-2">
-          {/* Copy button */}
-          <button
-            onClick={handleCopy}
-            className="p-1.5 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
-            title="Copy entry inscription"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-          </button>
-
-          {/* Like button */}
-          <button
-            onClick={handleLike}
-            className={`p-1.5 rounded flex items-center space-x-1 transition-colors ${
-              hasLiked ? 'text-rose-400 bg-rose-950/30' : 'text-zinc-400 hover:text-rose-400 hover:bg-zinc-800'
-            }`}
-            title="Acknowledge thought resonance"
-          >
-            <Heart className={`w-3.5 h-3.5 ${hasLiked ? 'fill-rose-400' : ''}`} />
-            <span className="font-mono text-[11px]">{likes}</span>
-          </button>
-
-          {/* Accordion Fold Chevron */}
-          <div className="p-1 text-zinc-500 group-hover:text-[#c5a059] transition-colors">
-            <ChevronDown 
-              className={`w-4 h-4 transition-transform duration-300 ${
-                isOpen ? 'rotate-180 text-[#c5a059]' : ''
-              }`} 
-            />
+          <div className="flex items-center space-x-3 text-[#73716b] text-[10px] tracking-wider">
+            <span>{entry.date}</span>
+            <span className="text-[#3a3934]">&bull;</span>
+            <span>{entry.timestamp}</span>
           </div>
         </div>
-      </div>
 
-      {/* Entry Title Bar with Decrypt / Scramble effect */}
-      <div className="pl-7 pr-6 pt-4 pb-2">
-        <h3 
-          ref={titleRef}
-          onClick={toggleFold}
-          className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-[#e8e4dc] cursor-pointer hover:text-[#c5a059] transition-colors"
-        >
-          {entry.title}
-        </h3>
+        {/* Chiseled Heading */}
+        <div className="group">
+          <h3
+            ref={titleRef}
+            onMouseEnter={chiselTitle}
+            className="font-display text-xl sm:text-2xl font-bold tracking-wider text-[#e5e0d8] carved-text leading-snug group-hover:text-[#ffffff] transition-colors"
+          >
+            {entry.title}
+          </h3>
+          {entry.epigraph && (
+            <p className="font-serif italic text-xs text-[#8c887e] tracking-widest uppercase mt-1">
+              {entry.epigraph}
+            </p>
+          )}
+        </div>
 
-        {/* Snippet preview if folded */}
+        {/* Collapsed Snippet when closed */}
         {!isOpen && (
-          <p className="mt-2 text-sm text-zinc-400 font-mono italic truncate cursor-pointer" onClick={toggleFold}>
-            &gt; {entry.snippet}
+          <p className="mt-3 font-serif text-[#94928b] italic text-sm line-clamp-1">
+            {entry.snippet}
           </p>
         )}
-      </div>
+      </header>
 
-      {/* Accordion Unfoldable Content */}
-      <div 
-        ref={contentRef}
-        className="overflow-hidden"
-        style={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }}
-      >
-        <div className="pl-7 pr-6 pt-2 pb-6 space-y-4">
-          {/* Main Prose / Philosophy Body */}
-          <div className="prose prose-invert max-w-none font-serif text-base sm:text-lg leading-relaxed text-zinc-300/90 whitespace-pre-line tracking-wide">
-            {entry.content}
+      {/* Expandable Tablet Body */}
+      <div ref={contentRef} className="overflow-hidden">
+        {/* Main Inscription Text */}
+        <div className="py-6 space-y-4 font-serif text-base sm:text-lg leading-[1.85] text-[#d8d2c4] select-text">
+          {entry.content.split('\n\n').map((para, i) => (
+            <p key={i} className="carved-text-subtle first-letter:text-2xl first-letter:font-display first-letter:mr-1 first-letter:text-[#ffffff]">
+              {para}
+            </p>
+          ))}
+        </div>
+
+        {/* Carved ASCII Lithic Artifact if present */}
+        {entry.asciiArt && (
+          <div className="my-5 p-4 bg-[#0a0a09] border border-[#22211f] stone-inset overflow-x-auto">
+            <pre className="font-mono text-[10px] sm:text-xs text-[#94928b] leading-tight select-none inline-block">
+              {entry.asciiArt.trim()}
+            </pre>
+          </div>
+        )}
+
+        {/* Tablet Meta Bar & Stone Tags */}
+        <div className="pt-4 border-t border-[#1e1d1b] flex flex-wrap items-center justify-between gap-4 text-xs font-mono">
+          {/* Tags as carved glyphs */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {entry.tags && entry.tags.map((tag, tIdx) => (
+              <span
+                key={tIdx}
+                className="px-2 py-0.5 bg-[#141413] border border-[#262522] text-[#858279] text-[10px] tracking-wider uppercase"
+              >
+                #{tag}
+              </span>
+            ))}
           </div>
 
-          {/* ASCII Art Inset Block */}
-          {entry.asciiArt && (
-            <div className="my-4 p-3 rounded bg-black/60 border border-zinc-800/80 font-mono text-[11px] leading-tight text-[#c5a059] overflow-x-auto select-all">
-              <pre className="whitespace-pre">{entry.asciiArt.trim()}</pre>
-            </div>
-          )}
-
-          {/* Metadata Footer: Author, Mood, Tags */}
-          <div className="pt-4 mt-4 border-t border-zinc-800/60 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
-            <div className="flex items-center space-x-2 text-zinc-400">
-              <User className="w-3.5 h-3.5 text-[#c5a059]" />
-              <span>Inscribed by:</span>
-              <span className="text-[#e5d7ba] font-semibold">{entry.author}</span>
-              {entry.mood && (
-                <>
-                  <span className="text-zinc-600">|</span>
-                  <span className="text-zinc-400 italic">Mood: {entry.mood}</span>
-                </>
-              )}
-            </div>
-
-            {/* Tags */}
-            <div className="flex flex-wrap gap-1.5">
-              {entry.tags.map((tag) => (
-                <span 
-                  key={tag}
-                  className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400 hover:text-[#c5a059] hover:border-[#c5a059]/40 transition-colors"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
+          <div className="text-[11px] font-serif text-[#73716b] italic">
+            Inscribed by <strong className="text-[#a8a49c] font-normal not-italic font-mono uppercase">{entry.author}</strong>
           </div>
         </div>
       </div>
 
-      {/* Paper Bottom Edge ASCII Decorative Footer */}
-      <div className="px-4 py-1.5 bg-black/40 border-t border-zinc-800/50 flex justify-between items-center text-[10px] font-mono text-zinc-600">
-        <span>+--[ PAGE FOLIO: {index + 1} ]--+</span>
-        <button 
+      {/* Tablet Bottom Action Slab */}
+      <footer className="mt-4 pt-3 border-t border-[#1e1d1b] flex items-center justify-between text-xs font-mono">
+        <div className="flex items-center space-x-2">
+          {/* Carve Mark / Endorsement */}
+          <button
+            type="button"
+            onClick={handleMark}
+            className={`stone-btn px-3 py-1.5 text-[11px] tracking-widest flex items-center space-x-1.5 ${hasLiked ? 'text-[#ffffff] bg-[#262522] border-[#44423d]' : 'text-[#858279]'}`}
+            title="Inscribe recognition mark on this stele"
+          >
+            <span>{hasLiked ? '‡ MARKED' : '‡ MARK'}</span>
+            <span className="text-[10px] text-[#5e5c56]">[{likes}]</span>
+          </button>
+
+          {/* Copy Stone Inscription */}
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="stone-btn px-3 py-1.5 text-[11px] tracking-widest text-[#858279]"
+            title="Transcribe inscription to clipboard"
+          >
+            <span>{copied ? '✓ TRANSCRIBED' : 'TRANSCRIBE'}</span>
+          </button>
+        </div>
+
+        {/* Toggle Unseal/Seal Button */}
+        <button
+          type="button"
           onClick={toggleFold}
-          className="hover:text-zinc-400 transition-colors"
+          className="stone-btn px-3 py-1.5 text-[10px] tracking-widest text-[#73716b] uppercase"
         >
-          {isOpen ? '[- FOLD PARCHMENT]' : '[+ UNFOLD FULL]'}
+          <span>{isOpen ? 'SEAL SLAB ▲' : 'UNSEAL SLAB ▼'}</span>
         </button>
-        <span>+----------------------+</span>
-      </div>
+      </footer>
     </article>
   );
 }

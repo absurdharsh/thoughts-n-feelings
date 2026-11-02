@@ -1,47 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Monitor, Palette, ArrowUp, ArrowDown, Edit3, Compass } from 'lucide-react';
 import { useSmoothScroll } from './SmoothScrollProvider';
 import { sound } from '../utils/audio';
 
-const THEMES = [
-  { id: 'parchment', label: 'PARCHMENT', color: '#c5a059' },
-  { id: 'emerald', label: 'EMERALD', color: '#00ff66' },
-  { id: 'amber', label: 'AMBER', color: '#ffb000' },
-  { id: 'cyan', label: 'CYAN', color: '#00e5ff' },
+const MINERAL_THEMES = [
+  { id: 'basalt', label: 'BASALT', color: '#0a0a09', text: '#d8d2c4' },
+  { id: 'slate', label: 'SLATE', color: '#0c0e12', text: '#c7d0dc' },
+  { id: 'limestone', label: 'LIMESTONE', color: '#0e0d0b', text: '#e4ddcf' },
+  { id: 'obsidian', label: 'OBSIDIAN', color: '#050505', text: '#b0aba2' },
 ];
 
 export default function RetroStatusBar({
   soundEnabled,
   onToggleSound,
-  crtEnabled,
-  onToggleCrt,
   currentTheme,
   onChangeTheme,
   onOpenNewEntryModal,
 }) {
   const { lenis, scrollProgress } = useSmoothScroll() || {};
   const [percent, setPercent] = useState(0);
-  const [activeSection, setActiveSection] = useState('PROLOGUE');
+  const [activeLiber, setActiveLiber] = useState('PRAEFATIO');
 
   useEffect(() => {
     const p = Math.min(100, Math.max(0, Math.round((scrollProgress || 0) * 100)));
     setPercent(p);
 
     if (p < 15) {
-      setActiveSection('HERO: BOOT PROTOCOL');
-    } else if (p < 40) {
-      setActiveSection('CH I: DETERMINISM');
-    } else if (p < 65) {
-      setActiveSection('CH II: ISHIKA THEOREM');
+      setActiveLiber('PRAEFATIO &bull; HERO');
+    } else if (p < 38) {
+      setActiveLiber('LIBER I &bull; DETERMINISMUS');
+    } else if (p < 62) {
+      setActiveLiber('LIBER II &bull; CONSUMPTIO');
     } else if (p < 85) {
-      setActiveSection('CH III: TOMBSTONES');
+      setActiveLiber('LIBER III &bull; TABULA VACUA');
     } else {
-      setActiveSection('EPILOGUE: VOID');
+      setActiveLiber('LIBER IV &bull; EPITAPHIA');
     }
   }, [scrollProgress]);
 
-  // Generate ASCII progress bar e.g. [██████░░░░]
-  const renderProgressBar = () => {
+  // Lithic Progress Bar e.g. [██████░░░░]
+  const renderLithicBar = () => {
     const totalBlocks = 10;
     const filledBlocks = Math.round((percent / 100) * totalBlocks);
     const filled = '█'.repeat(filledBlocks);
@@ -50,118 +47,84 @@ export default function RetroStatusBar({
   };
 
   const scrollToTop = () => {
-    sound.playClick(1.6);
+    sound.playClick(1.4);
     if (lenis) {
-      lenis.scrollTo(0, { duration: 1.5 });
+      lenis.scrollTo(0, { duration: 1.8 });
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
-  const scrollToLedger = () => {
-    sound.playFold();
-    const el = document.getElementById('digital-ledger');
-    if (el) {
-      if (lenis) {
-        lenis.scrollTo(el, { offset: -20, duration: 1.5 });
-      } else {
-        el.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
-  };
-
-  const cycleTheme = () => {
-    sound.playClick(1.3);
-    const currentIndex = THEMES.findIndex((t) => t.id === currentTheme);
-    const nextTheme = THEMES[(currentIndex + 1) % THEMES.length];
+  const cycleMineralTheme = () => {
+    sound.playClick(1.2);
+    const currentIndex = MINERAL_THEMES.findIndex((t) => t.id === currentTheme);
+    const nextTheme = MINERAL_THEMES[(currentIndex + 1) % MINERAL_THEMES.length];
     onChangeTheme(nextTheme.id);
   };
 
   return (
-    <nav className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-[96%] max-w-4xl select-none">
-      <div className="px-3 sm:px-5 py-2.5 rounded-lg bg-[#0c0e14]/90 backdrop-blur-md border border-zinc-800/90 shadow-2xl flex flex-wrap items-center justify-between gap-2.5 text-xs font-mono text-zinc-300">
-        
-        {/* Left: Scroll Progress & ASCII bar */}
-        <div className="flex items-center space-x-3">
-          <div className="text-[#c5a059] font-bold tracking-wider">
-            {renderProgressBar()} <span className="text-zinc-200">{percent}%</span>
-          </div>
-          <span className="text-zinc-700 hidden sm:inline">|</span>
-          <div className="hidden md:flex items-center space-x-1 text-zinc-400 text-[11px]">
-            <Compass className="w-3 h-3 text-[#c5a059]" />
-            <span className="truncate max-w-[150px]">{activeSection}</span>
-          </div>
+    <nav className="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-4xl select-none">
+      <div className="stone-slab p-2 sm:px-4 sm:py-2.5 border border-[#302f2b] flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-[#a39f96]">
+        {/* Left: Lithic Progress Bar & Current Liber */}
+        <div className="flex items-center space-x-3 text-[11px]">
+          <span className="text-[#d8d2c4] font-bold tracking-wider">
+            {renderLithicBar()} <span className="text-[#ffffff] ml-1">{percent}%</span>
+          </span>
+          <span className="text-[#3c3a35] hidden sm:inline">|</span>
+          <span 
+            dangerouslySetInnerHTML={{ __html: activeLiber }} 
+            className="hidden md:inline tracking-widest text-[#73716b] uppercase text-[10px]"
+          />
         </div>
 
-        {/* Center / Right: Retro Tool Controls */}
-        <div className="flex items-center space-x-2 sm:space-x-3">
-          {/* Theme Palette Switcher */}
+        {/* Center/Right: Monolithic Stone Actions */}
+        <div className="flex items-center space-x-1.5 sm:space-x-2">
+          {/* Mineral Theme Selector */}
           <button
-            onClick={cycleTheme}
-            className="px-2 py-1 rounded bg-zinc-900 border border-zinc-800 hover:border-zinc-600 text-zinc-300 flex items-center space-x-1 transition-colors"
-            title="Cycle Retro Color Theme"
+            type="button"
+            onClick={cycleMineralTheme}
+            className="stone-btn px-2.5 py-1 text-[10px] tracking-wider uppercase"
+            title="Cycle mineral tablet stone: Basalt, Slate, Limestone, Obsidian"
           >
-            <Palette className="w-3.5 h-3.5 text-[#c5a059]" />
-            <span className="hidden sm:inline uppercase text-[10px]">
-              {THEMES.find((t) => t.id === currentTheme)?.label || 'THEME'}
-            </span>
+            <span>MINERAL: {currentTheme?.toUpperCase() || 'BASALT'}</span>
           </button>
 
-          {/* CRT Scanline Toggle */}
+          {/* Sound / Chamber Resonance Toggle */}
           <button
+            type="button"
             onClick={() => {
-              sound.playClick(1.2);
-              onToggleCrt();
+              sound.playClick(1.1);
+              onToggleSound();
             }}
-            className={`px-2 py-1 rounded border flex items-center space-x-1 transition-colors ${
-              crtEnabled
-                ? 'bg-zinc-800 border-[#c5a059]/60 text-[#c5a059]'
-                : 'bg-zinc-900 border-zinc-800 text-zinc-500'
-            }`}
-            title="Toggle CRT Scanline Simulation"
+            className="stone-btn px-2.5 py-1 text-[10px] tracking-wider uppercase text-[#88857c]"
+            title="Toggle mineral stone acoustic feedback"
           >
-            <Monitor className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline text-[10px]">{crtEnabled ? 'CRT: ON' : 'CRT: OFF'}</span>
+            <span>{soundEnabled ? 'RESONANCE 🔔' : 'RESONANCE 🔕'}</span>
           </button>
 
-          {/* Ambient Sound Toggle */}
+          {/* Inscribe Stone Modal Trigger */}
           <button
-            onClick={onToggleSound}
-            className={`px-2 py-1 rounded border flex items-center space-x-1 transition-colors ${
-              soundEnabled
-                ? 'bg-amber-950/40 border-amber-500/60 text-amber-300'
-                : 'bg-zinc-900 border-zinc-800 text-zinc-500'
-            }`}
-            title="Toggle Retro Audio & Ambient Drone"
-          >
-            {soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-amber-400" /> : <VolumeX className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline text-[10px]">{soundEnabled ? 'AUDIO: ON' : 'AUDIO: OFF'}</span>
-          </button>
-
-          {/* Inscribe Entry Quick Trigger */}
-          <button
+            type="button"
             onClick={() => {
-              sound.playClick(1.4);
+              sound.playClick(1.3);
               onOpenNewEntryModal();
             }}
-            className="px-2.5 py-1 rounded bg-[#c5a059]/20 hover:bg-[#c5a059]/30 border border-[#c5a059]/60 text-[#e5d7ba] flex items-center space-x-1 transition-colors"
-            title="Inscribe New Thought"
+            className="stone-btn px-3 py-1 text-[10px] tracking-widest uppercase font-bold text-[#ffffff] bg-[#222220] border-[#44423d]"
           >
-            <Edit3 className="w-3.5 h-3.5 text-[#c5a059]" />
-            <span className="text-[10px] uppercase font-bold">INSCRIBE</span>
+            <span>INSCRIBE ✍</span>
           </button>
 
-          {/* Jump to top */}
+          {/* Return to Top */}
           <button
+            type="button"
             onClick={scrollToTop}
-            className="p-1 rounded bg-zinc-900 border border-zinc-800 hover:text-[#c5a059] text-zinc-400 transition-colors"
-            title="Scroll to Top"
+            className="stone-btn px-2 py-1 text-[10px] text-[#73716b] hover:text-[#d8d2c4]"
+            title="Ascend to Monumental Crest"
           >
-            <ArrowUp className="w-3.5 h-3.5" />
+            <span>▲</span>
           </button>
         </div>
       </div>
     </nav>
   );
 }
-
