@@ -7,10 +7,20 @@ import HandDrawnThoughtModal from './components/HandDrawnThoughtModal';
 import { INITIAL_ENTRIES } from './data/initialThoughts';
 import { getPersistentVoterId } from './utils/voterId';
 import {
-  SHARED_DB_URL,
   fetchCloudData,
   mutateCloudData
 } from './services/cloudDb';
+import {
+  isSupabaseConfigured,
+  fetchThoughtsFromSupabase,
+  insertThoughtToSupabase,
+  fetchCommentsFromSupabase,
+  insertCommentToSupabase,
+  fetchLikesFromSupabase,
+  toggleLikeInSupabase,
+  ownerDeleteThoughtInSupabase,
+  ownerDeleteCommentInSupabase
+} from './services/supabaseClient';
 
 // Default owner passkey hash: SHA-256 of 'absurdharsh'
 const DEFAULT_OWNER_HASH = 'f1c094b28bf9330bee6b8191938df3d4234145b833526942740f7408821f880c';
@@ -79,7 +89,7 @@ export default function App() {
     }
   });
 
-  // Entries: initialized from localStorage cache, then synced from cloud DB
+  // Entries: initialized from localStorage cache, then synced from cloud DB / Supabase
   const [entries, setEntries] = useState(() => {
     try {
       const saved = localStorage.getItem('thoughts_sketchbook_entries_v4');
@@ -126,39 +136,68 @@ export default function App() {
 
   const isSyncingRef = useRef(false);
 
-  // Synchronize state from the live cloud database
-  const syncFromCloud = useCallback(async () => {
+  // Synchronize state from Supabase (or Fallback Cloud DB)
+  const syncFromRemote = useCallback(async () => {
     if (isSyncingRef.current) return;
     isSyncingRef.current = true;
 
     try {
-      const cloud = await fetchCloudData();
-      if (cloud) {
-        // 1. Merge cloud thoughts with initial entries & owner deletions
-        const merged = mergeEntries(cloud.thoughts, cloud.deletedIds);
-        setEntries(merged);
-        try {
-          localStorage.setItem('thoughts_sketchbook_entries_v4', JSON.stringify(merged));
-        } catch {}
+      if (isSupabaseConfigured) {
+        // Fetch concurrently from PostgreSQL via Supabase
+        const [sbThoughts, sbComments, sbLikes] = await Promise.all([
+          fetchThoughtsFromSupabase(),
+          fetchCommentsFromSupabase(),
+          fetchLikesFromSupabase()
+        ]);
 
-        // 2. Sync comments
-        if (cloud.comments) {
-          setComments(cloud.comments);
+        if (sbThoughts) {
+          const merged = mergeEntries(sbThoughts, []);
+          setEntries(merged);
           try {
-            localStorage.setItem('thoughts_sketchbook_comments_v1', JSON.stringify(cloud.comments));
+            localStorage.setItem('thoughts_sketchbook_entries_v4', JSON.stringify(merged));
           } catch {}
         }
 
-        // 3. Sync likes (array of voter IDs per thought)
-        if (cloud.likes) {
-          setLikesData(cloud.likes);
+        if (sbComments) {
+          setComments(sbComments);
           try {
-            localStorage.setItem('thoughts_sketchbook_likes_v1', JSON.stringify(cloud.likes));
+            localStorage.setItem('thoughts_sketchbook_comments_v1', JSON.stringify(sbComments));
           } catch {}
+        }
+
+        if (sbLikes) {
+          setLikesData(sbLikes);
+          try {
+            localStorage.setItem('thoughts_sketchbook_likes_v1', JSON.stringify(sbLikes));
+          } catch {}
+        }
+      } else {
+        // Fallback to shared cloud DB
+        const cloud = await fetchCloudData();
+        if (cloud) {
+          const merged = mergeEntries(cloud.thoughts, cloud.deletedIds);
+          setEntries(merged);
+          try {
+            localStorage.setItem('thoughts_sketchbook_entries_v4', JSON.stringify(merged));
+          } catch {}
+
+          if (cloud.comments) {
+            setComments(cloud.comments);
+            try {
+              localStorage.setItem('thoughts_sketchbook_comments_v1', JSON.stringify(cloud.comments));
+            } catch {}
+          }
+
+          if (cloud.likes) {
+            setLikesData(cloud.likes);
+            try {
+              localStorage.setItem('thoughts_sketchbook_likes_v1', JSON.stringify(cloud.likes));
+            } catch {}
+          }
         }
       }
     } catch (err) {
-      console.warn('[CloudSync] Error syncing from cloud:', err);
+      console.warn('[Sync] Error synchronizing remote data:', err);
     } finally {
       isSyncingRef.current = false;
     }
@@ -166,26 +205,23 @@ export default function App() {
 
   // Fetch shared state on page load and poll on window focus / periodic timer
   useEffect(() => {
-    // Initial fetch on mount
-    syncFromCloud();
+    syncFromRemote();
 
-    // Poll on window focus
     const handleFocus = () => {
-      syncFromCloud();
+      syncFromRemote();
     };
 
     window.addEventListener('focus', handleFocus);
 
-    // Periodic background sync every 25 seconds
     const interval = setInterval(() => {
-      syncFromCloud();
+      syncFromRemote();
     }, 25000);
 
     return () => {
       window.removeEventListener('focus', handleFocus);
       clearInterval(interval);
     };
-  }, [syncFromCloud]);
+  }, [syncFromRemote]);
 
   // Sync theme with HTML root class
   useEffect(() => {
@@ -221,8 +257,8 @@ export default function App() {
     } catch {}
   }, [comments]);
 
-  // Real 1-Like-Per-User Enforcement with live cloud persistence:
-  // db.likes[thoughtId] = [voterId1, voterId2, ...]
+  // Real 1-Like-Per-User Enforcement with server-side RPC support:
+  // toggle_like(target_thought_id, user_voter_id)
   const handleToggleLike = async (entryId) => {
     if (!voterId) return;
 
@@ -242,25 +278,29 @@ export default function App() {
       };
     });
 
-    // 2. Persist to shared cloud database
-    await mutateCloudData((current) => {
-      const likesMap = current.likes || {};
-      const currentList = Array.isArray(likesMap[entryId])
-        ? likesMap[entryId]
-        : (likesMap[entryId]?.likedBy || []);
-      const hasLiked = currentList.includes(voterId);
-      const nextList = hasLiked
-        ? currentList.filter((id) => id !== voterId)
-        : Array.from(new Set([...currentList, voterId]));
+    // 2. Persist to Supabase RPC (or fallback cloud DB)
+    if (isSupabaseConfigured) {
+      await toggleLikeInSupabase(entryId, voterId);
+    } else {
+      await mutateCloudData((current) => {
+        const likesMap = current.likes || {};
+        const currentList = Array.isArray(likesMap[entryId])
+          ? likesMap[entryId]
+          : (likesMap[entryId]?.likedBy || []);
+        const hasLiked = currentList.includes(voterId);
+        const nextList = hasLiked
+          ? currentList.filter((id) => id !== voterId)
+          : Array.from(new Set([...currentList, voterId]));
 
-      return {
-        ...current,
-        likes: {
-          ...likesMap,
-          [entryId]: nextList
-        }
-      };
-    });
+        return {
+          ...current,
+          likes: {
+            ...likesMap,
+            [entryId]: nextList
+          }
+        };
+      });
+    }
   };
 
   // Hidden Owner Unlock Trigger (Ctrl+Shift+D / Cmd+Shift+D OR ?owner=true)
@@ -275,6 +315,7 @@ export default function App() {
         const lock = window.confirm('Owner mode is currently active. Would you like to lock it?');
         if (lock) {
           sessionStorage.removeItem('sketchbook_owner_session');
+          sessionStorage.removeItem('sketchbook_owner_passkey');
           localStorage.removeItem('sketchbook_owner_session');
           setIsOwner(false);
           window.alert('Owner mode locked.');
@@ -289,6 +330,7 @@ export default function App() {
         const hash = await sha256(input.trim());
         if (hash === target) {
           sessionStorage.setItem('sketchbook_owner_session', hash);
+          sessionStorage.setItem('sketchbook_owner_passkey', input.trim());
           localStorage.setItem('sketchbook_owner_session', hash);
           setIsOwner(true);
           window.alert('Owner mode verified & unlocked.');
@@ -325,37 +367,51 @@ export default function App() {
   }, []);
 
   // Hidden Owner-Only deletion for thoughts/feelings/quotes:
-  // Persisted immediately via PUT SHARED_DB_URL
+  // Verified inside PostgreSQL with owner_delete_thought RPC
   const handleDeleteEntry = async (entryId) => {
     if (!checkOwnerAuth()) {
       window.alert('Unauthorized: Owner session required.');
       return;
     }
 
+    const passkey = 
+      sessionStorage.getItem('sketchbook_owner_passkey') || 
+      window.prompt('Confirm owner passkey to execute database deletion:');
+
+    if (!passkey) return;
+
     // 1. Optimistic local update
     setEntries((prev) => prev.filter((item) => item.id !== entryId));
 
-    // 2. Persist deletion in shared cloud database
-    await mutateCloudData((current) => {
-      const thoughts = (current.thoughts || []).filter((item) => item.id !== entryId);
-      const deletedIds = Array.from(new Set([...(current.deletedIds || []), entryId]));
-      const nextComments = { ...(current.comments || {}) };
-      delete nextComments[entryId];
-      const nextLikes = { ...(current.likes || {}) };
-      delete nextLikes[entryId];
+    // 2. Persist deletion in Supabase RPC (or fallback cloud DB)
+    if (isSupabaseConfigured) {
+      const ok = await ownerDeleteThoughtInSupabase(entryId, passkey);
+      if (!ok) {
+        window.alert('Server-side deletion failed or unauthorized.');
+        syncFromRemote();
+      }
+    } else {
+      await mutateCloudData((current) => {
+        const thoughts = (current.thoughts || []).filter((item) => item.id !== entryId);
+        const deletedIds = Array.from(new Set([...(current.deletedIds || []), entryId]));
+        const nextComments = { ...(current.comments || {}) };
+        delete nextComments[entryId];
+        const nextLikes = { ...(current.likes || {}) };
+        delete nextLikes[entryId];
 
-      return {
-        ...current,
-        thoughts,
-        deletedIds,
-        comments: nextComments,
-        likes: nextLikes
-      };
-    });
+        return {
+          ...current,
+          thoughts,
+          deletedIds,
+          comments: nextComments,
+          likes: nextLikes
+        };
+      });
+    }
   };
 
   // Add anonymous comment to an entry:
-  // Persisted immediately via PUT SHARED_DB_URL
+  // Persisted immediately to Supabase (or fallback cloud DB)
   const handleAddComment = async (entryId, text) => {
     if (!text.trim()) return;
 
@@ -375,27 +431,43 @@ export default function App() {
       [entryId]: [...(prev[entryId] || []), newComment]
     }));
 
-    // 2. Persist to shared cloud database
-    await mutateCloudData((current) => {
-      const commentsMap = current.comments || {};
-      const existingList = commentsMap[entryId] || [];
-      return {
-        ...current,
-        comments: {
-          ...commentsMap,
-          [entryId]: [...existingList, newComment]
-        }
-      };
-    });
+    // 2. Persist to Supabase (or fallback cloud DB)
+    if (isSupabaseConfigured) {
+      const inserted = await insertCommentToSupabase(entryId, text.trim());
+      if (inserted) {
+        setComments((prev) => ({
+          ...prev,
+          [entryId]: (prev[entryId] || []).map((c) => (c.id === newComment.id ? inserted : c))
+        }));
+      }
+    } else {
+      await mutateCloudData((current) => {
+        const commentsMap = current.comments || {};
+        const existingList = commentsMap[entryId] || [];
+        return {
+          ...current,
+          comments: {
+            ...commentsMap,
+            [entryId]: [...existingList, newComment]
+          }
+        };
+      });
+    }
   };
 
   // Hidden Owner-Only deletion for an individual anonymous comment:
-  // Persisted immediately via PUT SHARED_DB_URL
+  // Verified inside PostgreSQL with owner_delete_comment RPC
   const handleDeleteComment = async (entryId, commentId) => {
     if (!checkOwnerAuth()) {
       window.alert('Unauthorized: Owner session required.');
       return;
     }
+
+    const passkey = 
+      sessionStorage.getItem('sketchbook_owner_passkey') || 
+      window.prompt('Confirm owner passkey to delete comment:');
+
+    if (!passkey) return;
 
     // 1. Optimistic local update
     setComments((prev) => ({
@@ -403,18 +475,26 @@ export default function App() {
       [entryId]: (prev[entryId] || []).filter((c) => c.id !== commentId)
     }));
 
-    // 2. Persist to shared cloud database
-    await mutateCloudData((current) => {
-      const commentsMap = current.comments || {};
-      const updatedList = (commentsMap[entryId] || []).filter((c) => c.id !== commentId);
-      return {
-        ...current,
-        comments: {
-          ...commentsMap,
-          [entryId]: updatedList
-        }
-      };
-    });
+    // 2. Persist deletion in Supabase RPC (or fallback cloud DB)
+    if (isSupabaseConfigured) {
+      const ok = await ownerDeleteCommentInSupabase(commentId, passkey);
+      if (!ok) {
+        window.alert('Server-side comment deletion failed.');
+        syncFromRemote();
+      }
+    } else {
+      await mutateCloudData((current) => {
+        const commentsMap = current.comments || {};
+        const updatedList = (commentsMap[entryId] || []).filter((c) => c.id !== commentId);
+        return {
+          ...current,
+          comments: {
+            ...commentsMap,
+            [entryId]: updatedList
+          }
+        };
+      });
+    }
   };
 
   const handleToggleTheme = () => {
@@ -422,24 +502,33 @@ export default function App() {
   };
 
   // Submit new thought or feeling:
-  // Prepend to top immediately and persist via PUT SHARED_DB_URL
+  // Prepend to top immediately and persist via Supabase insert (or fallback cloud DB)
   const handleSaveEntry = async (newEntry) => {
     // 1. Optimistic local update
     setEntries((prev) => [newEntry, ...prev]);
 
-    // 2. Persist to shared cloud database
-    await mutateCloudData((current) => {
-      const thoughts = current.thoughts || [];
-      const existingIndex = thoughts.findIndex((t) => t.id === newEntry.id);
-      const nextThoughts = existingIndex >= 0
-        ? thoughts.map((t, idx) => (idx === existingIndex ? newEntry : t))
-        : [newEntry, ...thoughts];
+    // 2. Persist to Supabase (or fallback cloud DB)
+    if (isSupabaseConfigured) {
+      const inserted = await insertThoughtToSupabase(newEntry);
+      if (inserted) {
+        setEntries((prev) =>
+          prev.map((item) => (item.id === newEntry.id ? inserted : item))
+        );
+      }
+    } else {
+      await mutateCloudData((current) => {
+        const thoughts = current.thoughts || [];
+        const existingIndex = thoughts.findIndex((t) => t.id === newEntry.id);
+        const nextThoughts = existingIndex >= 0
+          ? thoughts.map((t, idx) => (idx === existingIndex ? newEntry : t))
+          : [newEntry, ...thoughts];
 
-      return {
-        ...current,
-        thoughts: nextThoughts
-      };
-    });
+        return {
+          ...current,
+          thoughts: nextThoughts
+        };
+      });
+    }
   };
 
   const handleScrollToLedger = () => {
