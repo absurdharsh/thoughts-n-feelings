@@ -2,6 +2,7 @@
 // SKETCHBOOK ENTRIES — Raw Thoughts & Feelings
 // Hand-drawn editorial archive with zero ASCII art, zero Latin clutter,
 // and pure human reflections from absurdharsh, Ishika, and Clare Harner.
+// Includes createdAt timestamps for chronological ordering.
 // ==========================================================================
 
 export const INITIAL_ENTRIES = [
@@ -12,6 +13,7 @@ export const INITIAL_ENTRIES = [
     title: 'The Divine Pre-destination Paradox',
     author: 'absurdharsh',
     date: 'Autumn 2026',
+    createdAt: 1730000001000,
     doodle: 'star',
     content: `We hear that it is already decided by God, how we will live, die, and spend our days.
 
@@ -28,6 +30,7 @@ If every synaptic impulse was inscribed onto the cosmic ledger before the first 
     title: "Ishika's Theorem on Value & Consumption",
     author: 'ishika',
     date: 'Autumn 2026',
+    createdAt: 1730000002000,
     doodle: 'spiral',
     content: `Eating is not bad, as animals we eat and eat and give value to each other.
 
@@ -44,6 +47,7 @@ Perhaps purpose is not discovered in eternal preservation, but in being metaboli
     title: 'Cognitive Surplus vs. Emotional Quiet',
     author: 'absurdharsh',
     date: 'Late Night',
+    createdAt: 1730000003000,
     doodle: 'eye',
     content: `I think more than I feel, so don't expect frequent updates here lowk.
 
@@ -58,6 +62,7 @@ Most people write to perform or to petition an audience for validation. This ske
     title: 'Watch Me As I Come To Life',
     author: 'absurdharsh',
     date: 'Midnight',
+    createdAt: 1730000004000,
     doodle: 'spark',
     content: `“Watch me as I come to life when someone takes your name on my grave.”
 
@@ -70,6 +75,7 @@ Death is merely the loss of living reference. As long as someone utters your nam
     title: 'Immortal Presence in the Wind',
     author: 'clare harner',
     date: '1934',
+    createdAt: 1730000005000,
     doodle: 'wind',
     content: `“Do not stand by my grave, and cry.
 I am not there, I did not die.”
@@ -85,6 +91,7 @@ I am a thousand winds that blow. I am the diamond glints on snow. I am the sunli
     title: 'On Contentment and Shadow',
     author: 'absurdharsh',
     date: 'Dusk',
+    createdAt: 1730000006000,
     doodle: 'arrow',
     content: `“Fall in love with what you have, not with what you want.”
 
@@ -99,6 +106,7 @@ Desire is the constant longing for what is absent, blinding the eye to the ink o
     title: 'Fall in Love With What You Have',
     author: 'absurdharsh',
     date: 'Autumn 2026',
+    createdAt: 1730000007000,
     doodle: 'star',
     content: `“Fall in love with what you have, not with what you want.”
 
@@ -111,6 +119,7 @@ Desire is the constant longing for what is absent, blinding the eye to the ink o
     title: 'When There Is a Will, There Is a Way',
     author: 'absurdharsh',
     date: 'Autumn 2026',
+    createdAt: 1730000008000,
     doodle: 'spark',
     content: `“When there is a will, there is a way.”
 
@@ -123,6 +132,7 @@ Paths aren't laid out in advance waiting to be discovered like paved sidewalks. 
     title: 'In Amidst Darkness',
     author: 'absurdharsh',
     date: 'Dusk',
+    createdAt: 1730000009000,
     doodle: 'arrow',
     content: `“Even your shadow leaves you, when you're in amidst darkness.”
 
@@ -135,6 +145,7 @@ People get surprised when presence has conditions. But even light-dependent comp
     title: 'Doing That Pretty With CSS',
     author: 'absurdharsh',
     date: 'Autumn 2026',
+    createdAt: 1730000010000,
     doodle: 'spiral',
     content: `From the initial index & manifesto:
 “i have only really done things with html and i havent even given it any structure.

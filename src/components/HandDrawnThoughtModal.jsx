@@ -27,6 +27,7 @@ export default function HandDrawnThoughtModal({ isOpen, onClose, onSaveEntry }) 
       title: title.trim(),
       author: author.trim() || 'absurdharsh',
       date: 'Just Now',
+      createdAt: Date.now(),
       doodle,
       content: content.trim(),
     };

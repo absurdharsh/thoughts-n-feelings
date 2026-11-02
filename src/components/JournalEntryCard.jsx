@@ -27,8 +27,18 @@ function renderDoodleIcon(doodleType) {
   }
 }
 
-export default function JournalEntryCard({ entry, index, total, isOwner = false, onDeleteEntry }) {
+export default function JournalEntryCard({
+  entry,
+  index,
+  total,
+  isOwner = false,
+  onDeleteEntry,
+  comments = [],
+  onAddComment,
+  onDeleteComment
+}) {
   const [copied, setCopied] = useState(false);
+  const [commentText, setCommentText] = useState('');
 
   const handleCopy = () => {
     const textToCopy = `“${entry.title}”\n\n${entry.content}\n\n— ${entry.author} (${entry.date})`;
@@ -37,7 +47,7 @@ export default function JournalEntryCard({ entry, index, total, isOwner = false,
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Shift-click deletion (Owner only)
+  // Shift-click deletion for thought entry (Owner only)
   const handleArticleClick = (e) => {
     if (isOwner && e.shiftKey && onDeleteEntry) {
       e.preventDefault();
@@ -45,6 +55,25 @@ export default function JournalEntryCard({ entry, index, total, isOwner = false,
       const confirmed = window.confirm(`Delete entry "${entry.title}"?`);
       if (confirmed) {
         onDeleteEntry(entry.id);
+      }
+    }
+  };
+
+  // Add anonymous comment
+  const handleCommentSubmit = (e) => {
+    e.preventDefault();
+    if (!commentText.trim() || !onAddComment) return;
+    onAddComment(commentText.trim());
+    setCommentText('');
+  };
+
+  // Shift-click deletion for individual anonymous comment (Owner only)
+  const handleCommentShiftClick = (e, commentId, text) => {
+    if (isOwner && e.shiftKey && onDeleteComment) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (window.confirm(`Delete comment "${text}"?`)) {
+        onDeleteComment(commentId);
       }
     }
   };
@@ -75,7 +104,7 @@ export default function JournalEntryCard({ entry, index, total, isOwner = false,
                   onDeleteEntry(entry.id);
                 }
               }}
-              className="text-xs opacity-40 hover:opacity-100 transition-opacity ml-1 cursor-pointer select-none"
+              className="text-xs opacity-40 hover:opacity-100 hover:text-red-500 transition-opacity ml-1 cursor-pointer select-none"
               title="Delete this entry (Owner only)"
             >
               [x]
@@ -133,6 +162,72 @@ export default function JournalEntryCard({ entry, index, total, isOwner = false,
         <span className="text-ink/40 dark:text-darkInk/40">
           folio {index + 1} of {total}
         </span>
+      </div>
+
+      {/* Anonymous Comments Section (Preserves hand-drawn sketchbook aesthetic) */}
+      <div className="mt-6 pt-4 border-t border-ink/10 dark:border-darkInk/10 font-handwritten">
+        {/* Render comments if any exist */}
+        {comments && comments.length > 0 && (
+          <div className="space-y-2 mb-4">
+            <div className="text-xs uppercase tracking-wider text-ink/40 dark:text-darkInk/40">
+              anonymous notes ({comments.length})
+            </div>
+            <div className="space-y-2">
+              {comments.map((comment) => (
+                <div
+                  key={comment.id}
+                  onClick={(e) => handleCommentShiftClick(e, comment.id, comment.text)}
+                  className="flex items-baseline justify-between gap-3 text-base sm:text-lg group"
+                >
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-editorial italic text-sm text-ink/50 dark:text-darkInk/50 flex-shrink-0 select-none">
+                      anonymous:
+                    </span>
+                    <span className="font-body text-ink dark:text-darkInk leading-snug">
+                      {comment.text}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-ink/40 dark:text-darkInk/40 flex-shrink-0 select-none">
+                    <span>{comment.timestamp}</span>
+                    {isOwner && onDeleteComment && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Delete comment "${comment.text}"?`)) {
+                            onDeleteComment(comment.id);
+                          }
+                        }}
+                        className="opacity-40 hover:opacity-100 hover:text-red-500 transition-opacity ml-1 cursor-pointer select-none text-[11px]"
+                        title="Delete this comment (Owner only)"
+                      >
+                        [x]
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Minimal Hand-Drawn Single Input (No Name field, Submit on Enter or button) */}
+        <form onSubmit={handleCommentSubmit} className="mt-3 flex items-center gap-3">
+          <input
+            type="text"
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            placeholder="leave an anonymous note..."
+            className="flex-grow bg-transparent border-b border-ink/20 dark:border-darkInk/20 focus:border-ink dark:focus:border-darkInk outline-none font-handwritten text-base sm:text-lg text-ink dark:text-darkInk placeholder:text-ink/40 dark:placeholder:text-darkInk/40 py-1 transition-colors"
+          />
+          <button
+            type="submit"
+            className="naked-link scribble-hover font-handwritten text-base text-ink/70 dark:text-darkInk/70 hover:text-ink dark:hover:text-darkInk flex-shrink-0"
+            title="Leave anonymous note"
+          >
+            drop note →
+          </button>
+        </form>
       </div>
 
       {/* Hand-drawn divider between thoughts */}

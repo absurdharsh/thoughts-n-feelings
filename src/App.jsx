@@ -17,6 +17,15 @@ async function sha256(text) {
     .join('');
 }
 
+// Sort helper: Most recent entries first (descending by createdAt / timestamp / ID)
+function sortEntriesDescending(list) {
+  return [...list].sort((a, b) => {
+    const timeA = a.createdAt || (a.id && a.id.startsWith('entry-') ? parseInt(a.id.replace('entry-', ''), 10) || 0 : 0);
+    const timeB = b.createdAt || (b.id && b.id.startsWith('entry-') ? parseInt(b.id.replace('entry-', ''), 10) || 0 : 0);
+    return timeB - timeA;
+  });
+}
+
 export default function App() {
   // Binary Theme: Light mode (Paper #FFFFFF, Ink #000000) by default
   const [isDark, setIsDark] = useState(() => {
@@ -27,15 +36,27 @@ export default function App() {
     }
   });
 
+  // Entries: sorted so most recent entry appears at the very top
   const [entries, setEntries] = useState(() => {
     try {
       const saved = localStorage.getItem('thoughts_sketchbook_entries_v4');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return sortEntriesDescending(parsed);
+        }
       }
     } catch {}
-    return INITIAL_ENTRIES;
+    return sortEntriesDescending(INITIAL_ENTRIES);
+  });
+
+  // Anonymous Comments store: keyed by entry.id
+  const [comments, setComments] = useState(() => {
+    try {
+      const saved = localStorage.getItem('thoughts_sketchbook_comments_v1');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {};
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -70,6 +91,13 @@ export default function App() {
       localStorage.setItem('thoughts_sketchbook_entries_v4', JSON.stringify(entries));
     } catch {}
   }, [entries]);
+
+  // Sync anonymous comments to local storage
+  useEffect(() => {
+    try {
+      localStorage.setItem('thoughts_sketchbook_comments_v1', JSON.stringify(comments));
+    } catch {}
+  }, [comments]);
 
   // Hidden Owner Unlock Trigger (Ctrl+Shift+D / Cmd+Shift+D OR ?owner=true)
   useEffect(() => {
@@ -128,8 +156,8 @@ export default function App() {
     };
   }, []);
 
+  // Owner deletion for thoughts/feelings/quotes
   const handleDeleteEntry = (entryId) => {
-    // Security check: verify owner session before executing deletion
     try {
       const session = localStorage.getItem('sketchbook_owner_session');
       const target = localStorage.getItem('sketchbook_owner_hash') || DEFAULT_OWNER_HASH;
@@ -144,10 +172,51 @@ export default function App() {
     setEntries((prev) => prev.filter((item) => item.id !== entryId));
   };
 
+  // Add anonymous comment to an entry
+  const handleAddComment = (entryId, text) => {
+    if (!text.trim()) return;
+
+    // Format human-readable time (e.g., 'just now')
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const newComment = {
+      id: `comment-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      text: text.trim(),
+      timestamp: timeStr,
+      createdAt: Date.now()
+    };
+
+    setComments((prev) => ({
+      ...prev,
+      [entryId]: [...(prev[entryId] || []), newComment]
+    }));
+  };
+
+  // Owner deletion for an individual anonymous comment
+  const handleDeleteComment = (entryId, commentId) => {
+    try {
+      const session = localStorage.getItem('sketchbook_owner_session');
+      const target = localStorage.getItem('sketchbook_owner_hash') || DEFAULT_OWNER_HASH;
+      if (session !== target) {
+        window.alert('Unauthorized: Owner session required.');
+        return;
+      }
+    } catch {
+      return;
+    }
+
+    setComments((prev) => ({
+      ...prev,
+      [entryId]: (prev[entryId] || []).filter((c) => c.id !== commentId)
+    }));
+  };
+
   const handleToggleTheme = () => {
     setIsDark((prev) => !prev);
   };
 
+  // Whenever a new entry is created, prepend it to the top immediately
   const handleSaveEntry = (newEntry) => {
     setEntries((prev) => [newEntry, ...prev]);
   };
@@ -179,6 +248,9 @@ export default function App() {
             onOpenNewEntryModal={() => setIsModalOpen(true)}
             isOwner={isOwner}
             onDeleteEntry={handleDeleteEntry}
+            comments={comments}
+            onAddComment={handleAddComment}
+            onDeleteComment={handleDeleteComment}
           />
 
           {/* Hand-Drawn Scroll Back To Top */}

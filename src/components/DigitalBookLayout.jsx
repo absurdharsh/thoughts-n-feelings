@@ -2,13 +2,27 @@ import React, { useState, useMemo } from 'react';
 import JournalEntryCard from './JournalEntryCard';
 import { DoodleCircle } from './HandDrawnDoodles';
 
-export default function DigitalBookLayout({ entries, onOpenNewEntryModal, isOwner = false, onDeleteEntry }) {
+export default function DigitalBookLayout({
+  entries,
+  onOpenNewEntryModal,
+  isOwner = false,
+  onDeleteEntry,
+  comments = {},
+  onAddComment,
+  onDeleteComment
+}) {
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filtered thoughts
+  // Sort descending by creation timestamp / ID so most recent appears first
   const filteredEntries = useMemo(() => {
-    return entries.filter((entry) => {
+    const sorted = [...entries].sort((a, b) => {
+      const timeA = a.createdAt || (a.id && a.id.startsWith('entry-') ? parseInt(a.id.replace('entry-', ''), 10) || 0 : 0);
+      const timeB = b.createdAt || (b.id && b.id.startsWith('entry-') ? parseInt(b.id.replace('entry-', ''), 10) || 0 : 0);
+      return timeB - timeA;
+    });
+
+    return sorted.filter((entry) => {
       const matchesFilter =
         activeFilter === 'all' || entry.type === activeFilter;
       const q = searchQuery.toLowerCase().trim();
@@ -85,7 +99,7 @@ export default function DigitalBookLayout({ entries, onOpenNewEntryModal, isOwne
         </div>
       </div>
 
-      {/* Stream of Sketchbook Entries */}
+      {/* Stream of Sketchbook Entries (Most Recent First) */}
       <div className="mt-4">
         {filteredEntries.length === 0 ? (
           <div className="py-20 text-center font-handwritten text-2xl text-ink/50 dark:text-darkInk/50">
@@ -107,6 +121,9 @@ export default function DigitalBookLayout({ entries, onOpenNewEntryModal, isOwne
               total={filteredEntries.length}
               isOwner={isOwner}
               onDeleteEntry={onDeleteEntry}
+              comments={comments[entry.id] || []}
+              onAddComment={(text) => onAddComment && onAddComment(entry.id, text)}
+              onDeleteComment={(commentId) => onDeleteComment && onDeleteComment(entry.id, commentId)}
             />
           ))
         )}
