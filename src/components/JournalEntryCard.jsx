@@ -5,6 +5,10 @@ import {
   DoodleSpiral,
   DoodleSpark,
   DoodleArrowDown,
+  DoodleHeart,
+  DoodleWind,
+  DoodleMoon,
+  DoodleQuill,
   DoodleDivider
 } from './HandDrawnDoodles';
 
@@ -20,7 +24,14 @@ function renderDoodleIcon(doodleType) {
       return <DoodleEye className={commonClasses} />;
     case 'spark':
       return <DoodleSpark className={commonClasses} />;
+    case 'heart':
+      return <DoodleHeart className={commonClasses} />;
     case 'wind':
+      return <DoodleWind className={commonClasses} />;
+    case 'moon':
+      return <DoodleMoon className={commonClasses} />;
+    case 'quill':
+      return <DoodleQuill className={commonClasses} />;
     case 'arrow':
     default:
       return <DoodleArrowDown className={commonClasses} />;

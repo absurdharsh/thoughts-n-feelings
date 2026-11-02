@@ -116,3 +116,22 @@ export function DoodleCircle({ className = 'w-full h-full' }) {
   );
 }
 
+export function DoodleHeart({ className = 'w-6 h-6' }) {
+  return (
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={`hand-drawn-line ${className}`}>
+      <path d="M16 27 C16 27 5 19 5 11 C5 6 9 3 13 4 C15 4.7 15.6 6.5 16 8 C16.4 6.5 17 4.7 19 4 C23 3 27 6 27 11 C27 19 16 27 16 27 Z" />
+    </svg>
+  );
+}
+
+export function DoodleWind({ className = 'w-7 h-7' }) {
+  return (
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2.0" strokeLinecap="round" strokeLinejoin="round" className={`hand-drawn-line ${className}`}>
+      <path d="M 4 12 C 12 12, 18 10, 22 10 C 26 10, 28 12, 27 15 C 26 17, 23 16, 23 14" />
+      <path d="M 2 18 C 14 18, 20 18, 25 18 C 29 18, 30 21, 28 23 C 26 24, 24 23, 24 21" />
+      <path d="M 6 24 C 12 24, 16 24, 19 24 C 21 24, 23 25, 22 27" />
+    </svg>
+  );
+}
+
+
