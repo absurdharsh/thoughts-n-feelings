@@ -31,8 +31,15 @@ export default function DigitalBookLayout({
       }
 
       if (sortBy === 'popular') {
-        const countA = (likesData[a.id] && likesData[a.id].count) || 0;
-        const countB = (likesData[b.id] && likesData[b.id].count) || 0;
+        const getLikeCount = (id) => {
+          const item = likesData && likesData[id];
+          if (Array.isArray(item)) return item.length;
+          if (item && typeof item === 'object') return item.count || (item.likedBy ? item.likedBy.length : 0);
+          return 0;
+        };
+
+        const countA = getLikeCount(a.id);
+        const countB = getLikeCount(b.id);
         if (countB !== countA) {
           return countB - countA; // Higher likes first
         }
@@ -154,9 +161,12 @@ export default function DigitalBookLayout({
           </div>
         ) : (
           filteredEntries.map((entry, index) => {
-            const entryLikes = likesData[entry.id] || { count: 0, likedBy: [] };
-            const hasLiked = Boolean(voterId && entryLikes.likedBy && entryLikes.likedBy.includes(voterId));
-            const likeCount = entryLikes.count || 0;
+            const entryLikes = (likesData && likesData[entry.id]) || [];
+            const voterList = Array.isArray(entryLikes)
+              ? entryLikes
+              : (entryLikes && entryLikes.likedBy ? entryLikes.likedBy : []);
+            const hasLiked = Boolean(voterId && voterList.includes(voterId));
+            const likeCount = voterList.length;
 
             return (
               <JournalEntryCard

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import SmoothScrollProvider from './components/SmoothScrollProvider';
 import HandDrawnHero from './components/HandDrawnHero';
 import DigitalBookLayout from './components/DigitalBookLayout';
@@ -6,6 +6,11 @@ import RetroStatusBar from './components/RetroStatusBar';
 import HandDrawnThoughtModal from './components/HandDrawnThoughtModal';
 import { INITIAL_ENTRIES } from './data/initialThoughts';
 import { getPersistentVoterId } from './utils/voterId';
+import {
+  SHARED_DB_URL,
+  fetchCloudData,
+  mutateCloudData
+} from './services/cloudDb';
 
 // Default owner passkey hash: SHA-256 of 'absurdharsh'
 const DEFAULT_OWNER_HASH = 'f1c094b28bf9330bee6b8191938df3d4234145b833526942740f7408821f880c';
@@ -18,6 +23,21 @@ async function sha256(text) {
     .join('');
 }
 
+// Helper to verify owner authentication against sessionStorage and fallback
+function checkOwnerAuth() {
+  try {
+    const session = 
+      (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('sketchbook_owner_session')) ||
+      (typeof localStorage !== 'undefined' && localStorage.getItem('sketchbook_owner_session'));
+    const target = 
+      (typeof localStorage !== 'undefined' && localStorage.getItem('sketchbook_owner_hash')) || 
+      DEFAULT_OWNER_HASH;
+    return Boolean(session && session === target);
+  } catch {
+    return false;
+  }
+}
+
 // Sort helper: Most recent entries first (descending by createdAt / timestamp / ID)
 function sortEntriesDescending(list) {
   return [...list].sort((a, b) => {
@@ -25,6 +45,28 @@ function sortEntriesDescending(list) {
     const timeB = b.createdAt || (b.id && b.id.startsWith('entry-') ? parseInt(b.id.replace('entry-', ''), 10) || 0 : 0);
     return timeB - timeA;
   });
+}
+
+// Seed & Merge helper: Combines INITIAL_ENTRIES with cloud thoughts while respecting owner deletions
+function mergeEntries(cloudThoughts = [], deletedIds = []) {
+  const deletedSet = new Set(deletedIds || []);
+  const map = new Map();
+
+  // 1. Add cloud thoughts first
+  (cloudThoughts || []).forEach((item) => {
+    if (item && item.id && !deletedSet.has(item.id)) {
+      map.set(item.id, item);
+    }
+  });
+
+  // 2. Add INITIAL_ENTRIES that have not been deleted and not overridden
+  INITIAL_ENTRIES.forEach((init) => {
+    if (!deletedSet.has(init.id) && !map.has(init.id)) {
+      map.set(init.id, init);
+    }
+  });
+
+  return sortEntriesDescending(Array.from(map.values()));
 }
 
 export default function App() {
@@ -37,7 +79,7 @@ export default function App() {
     }
   });
 
-  // Entries: sorted so most recent entry appears at the very top
+  // Entries: initialized from localStorage cache, then synced from cloud DB
   const [entries, setEntries] = useState(() => {
     try {
       const saved = localStorage.getItem('thoughts_sketchbook_entries_v4');
@@ -51,14 +93,14 @@ export default function App() {
     return sortEntriesDescending(INITIAL_ENTRIES);
   });
 
-  // Persistent anonymous voter ID (UUID + browser fingerprint across localStorage + Cookies + IndexedDB)
+  // Persistent anonymous voter ID (stored in localStorage under 'tf_voter_id')
   const [voterId, setVoterId] = useState('');
 
   useEffect(() => {
     getPersistentVoterId().then((id) => setVoterId(id));
   }, []);
 
-  // Real-Only Likes store: keyed by entry.id -> { count: number, likedBy: string[] }
+  // Real-Only Likes store: keyed by entry.id -> array of unique voter IDs [voterId1, voterId2, ...]
   // Every thought starts with 0 real likes unless explicitly liked by a user
   const [likesData, setLikesData] = useState(() => {
     try {
@@ -68,7 +110,7 @@ export default function App() {
     return {};
   });
 
-  // Anonymous Comments store: keyed by entry.id
+  // Anonymous Comments store: keyed by entry.id -> [{ id, text, createdAt, timestamp }]
   const [comments, setComments] = useState(() => {
     try {
       const saved = localStorage.getItem('thoughts_sketchbook_comments_v1');
@@ -79,16 +121,71 @@ export default function App() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Secret Owner Session (verified via SHA-256)
-  const [isOwner, setIsOwner] = useState(() => {
+  // Secret Owner Session (verified via SHA-256 and stored in sessionStorage)
+  const [isOwner, setIsOwner] = useState(checkOwnerAuth);
+
+  const isSyncingRef = useRef(false);
+
+  // Synchronize state from the live cloud database
+  const syncFromCloud = useCallback(async () => {
+    if (isSyncingRef.current) return;
+    isSyncingRef.current = true;
+
     try {
-      const session = localStorage.getItem('sketchbook_owner_session');
-      const target = localStorage.getItem('sketchbook_owner_hash') || DEFAULT_OWNER_HASH;
-      return Boolean(session && session === target);
-    } catch {
-      return false;
+      const cloud = await fetchCloudData();
+      if (cloud) {
+        // 1. Merge cloud thoughts with initial entries & owner deletions
+        const merged = mergeEntries(cloud.thoughts, cloud.deletedIds);
+        setEntries(merged);
+        try {
+          localStorage.setItem('thoughts_sketchbook_entries_v4', JSON.stringify(merged));
+        } catch {}
+
+        // 2. Sync comments
+        if (cloud.comments) {
+          setComments(cloud.comments);
+          try {
+            localStorage.setItem('thoughts_sketchbook_comments_v1', JSON.stringify(cloud.comments));
+          } catch {}
+        }
+
+        // 3. Sync likes (array of voter IDs per thought)
+        if (cloud.likes) {
+          setLikesData(cloud.likes);
+          try {
+            localStorage.setItem('thoughts_sketchbook_likes_v1', JSON.stringify(cloud.likes));
+          } catch {}
+        }
+      }
+    } catch (err) {
+      console.warn('[CloudSync] Error syncing from cloud:', err);
+    } finally {
+      isSyncingRef.current = false;
     }
-  });
+  }, []);
+
+  // Fetch shared state on page load and poll on window focus / periodic timer
+  useEffect(() => {
+    // Initial fetch on mount
+    syncFromCloud();
+
+    // Poll on window focus
+    const handleFocus = () => {
+      syncFromCloud();
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    // Periodic background sync every 25 seconds
+    const interval = setInterval(() => {
+      syncFromCloud();
+    }, 25000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
+    };
+  }, [syncFromCloud]);
 
   // Sync theme with HTML root class
   useEffect(() => {
@@ -124,32 +221,43 @@ export default function App() {
     } catch {}
   }, [comments]);
 
-  // Strict one-like-per-user enforcement: adds or toggles off voterId, never duplicates
-  const handleToggleLike = (entryId) => {
+  // Real 1-Like-Per-User Enforcement with live cloud persistence:
+  // db.likes[thoughtId] = [voterId1, voterId2, ...]
+  const handleToggleLike = async (entryId) => {
     if (!voterId) return;
 
+    // 1. Optimistic local update
     setLikesData((prev) => {
-      const entryLikes = prev[entryId] || { count: 0, likedBy: [] };
-      const alreadyLiked = entryLikes.likedBy.includes(voterId);
-
-      let nextLikedBy;
-      let nextCount;
-
-      if (alreadyLiked) {
-        // Toggle off: remove voterId and decrement count
-        nextLikedBy = entryLikes.likedBy.filter((id) => id !== voterId);
-        nextCount = Math.max(0, entryLikes.count - 1);
-      } else {
-        // Toggle on: add voterId (UNIQUE enforcement) and increment count
-        nextLikedBy = [...entryLikes.likedBy, voterId];
-        nextCount = entryLikes.count + 1;
-      }
+      const currentList = Array.isArray(prev[entryId]) 
+        ? prev[entryId] 
+        : (prev[entryId]?.likedBy || []);
+      const hasLiked = currentList.includes(voterId);
+      const nextList = hasLiked
+        ? currentList.filter((id) => id !== voterId)
+        : Array.from(new Set([...currentList, voterId]));
 
       return {
         ...prev,
-        [entryId]: {
-          count: nextCount,
-          likedBy: nextLikedBy
+        [entryId]: nextList
+      };
+    });
+
+    // 2. Persist to shared cloud database
+    await mutateCloudData((current) => {
+      const likesMap = current.likes || {};
+      const currentList = Array.isArray(likesMap[entryId])
+        ? likesMap[entryId]
+        : (likesMap[entryId]?.likedBy || []);
+      const hasLiked = currentList.includes(voterId);
+      const nextList = hasLiked
+        ? currentList.filter((id) => id !== voterId)
+        : Array.from(new Set([...currentList, voterId]));
+
+      return {
+        ...current,
+        likes: {
+          ...likesMap,
+          [entryId]: nextList
         }
       };
     });
@@ -159,11 +267,14 @@ export default function App() {
   useEffect(() => {
     const handleUnlockPrompt = async () => {
       const target = localStorage.getItem('sketchbook_owner_hash') || DEFAULT_OWNER_HASH;
-      const currentSession = localStorage.getItem('sketchbook_owner_session');
+      const currentSession = 
+        sessionStorage.getItem('sketchbook_owner_session') || 
+        localStorage.getItem('sketchbook_owner_session');
 
       if (currentSession === target) {
         const lock = window.confirm('Owner mode is currently active. Would you like to lock it?');
         if (lock) {
+          sessionStorage.removeItem('sketchbook_owner_session');
           localStorage.removeItem('sketchbook_owner_session');
           setIsOwner(false);
           window.alert('Owner mode locked.');
@@ -177,6 +288,7 @@ export default function App() {
       try {
         const hash = await sha256(input.trim());
         if (hash === target) {
+          sessionStorage.setItem('sketchbook_owner_session', hash);
           localStorage.setItem('sketchbook_owner_session', hash);
           setIsOwner(true);
           window.alert('Owner mode verified & unlocked.');
@@ -212,24 +324,39 @@ export default function App() {
     };
   }, []);
 
-  // Owner deletion for thoughts/feelings/quotes
-  const handleDeleteEntry = (entryId) => {
-    try {
-      const session = localStorage.getItem('sketchbook_owner_session');
-      const target = localStorage.getItem('sketchbook_owner_hash') || DEFAULT_OWNER_HASH;
-      if (session !== target) {
-        window.alert('Unauthorized: Owner session required.');
-        return;
-      }
-    } catch {
+  // Hidden Owner-Only deletion for thoughts/feelings/quotes:
+  // Persisted immediately via PUT SHARED_DB_URL
+  const handleDeleteEntry = async (entryId) => {
+    if (!checkOwnerAuth()) {
+      window.alert('Unauthorized: Owner session required.');
       return;
     }
 
+    // 1. Optimistic local update
     setEntries((prev) => prev.filter((item) => item.id !== entryId));
+
+    // 2. Persist deletion in shared cloud database
+    await mutateCloudData((current) => {
+      const thoughts = (current.thoughts || []).filter((item) => item.id !== entryId);
+      const deletedIds = Array.from(new Set([...(current.deletedIds || []), entryId]));
+      const nextComments = { ...(current.comments || {}) };
+      delete nextComments[entryId];
+      const nextLikes = { ...(current.likes || {}) };
+      delete nextLikes[entryId];
+
+      return {
+        ...current,
+        thoughts,
+        deletedIds,
+        comments: nextComments,
+        likes: nextLikes
+      };
+    });
   };
 
-  // Add anonymous comment to an entry
-  const handleAddComment = (entryId, text) => {
+  // Add anonymous comment to an entry:
+  // Persisted immediately via PUT SHARED_DB_URL
+  const handleAddComment = async (entryId, text) => {
     if (!text.trim()) return;
 
     const now = new Date();
@@ -242,38 +369,77 @@ export default function App() {
       createdAt: Date.now()
     };
 
+    // 1. Optimistic local update
     setComments((prev) => ({
       ...prev,
       [entryId]: [...(prev[entryId] || []), newComment]
     }));
+
+    // 2. Persist to shared cloud database
+    await mutateCloudData((current) => {
+      const commentsMap = current.comments || {};
+      const existingList = commentsMap[entryId] || [];
+      return {
+        ...current,
+        comments: {
+          ...commentsMap,
+          [entryId]: [...existingList, newComment]
+        }
+      };
+    });
   };
 
-  // Owner deletion for an individual anonymous comment
-  const handleDeleteComment = (entryId, commentId) => {
-    try {
-      const session = localStorage.getItem('sketchbook_owner_session');
-      const target = localStorage.getItem('sketchbook_owner_hash') || DEFAULT_OWNER_HASH;
-      if (session !== target) {
-        window.alert('Unauthorized: Owner session required.');
-        return;
-      }
-    } catch {
+  // Hidden Owner-Only deletion for an individual anonymous comment:
+  // Persisted immediately via PUT SHARED_DB_URL
+  const handleDeleteComment = async (entryId, commentId) => {
+    if (!checkOwnerAuth()) {
+      window.alert('Unauthorized: Owner session required.');
       return;
     }
 
+    // 1. Optimistic local update
     setComments((prev) => ({
       ...prev,
       [entryId]: (prev[entryId] || []).filter((c) => c.id !== commentId)
     }));
+
+    // 2. Persist to shared cloud database
+    await mutateCloudData((current) => {
+      const commentsMap = current.comments || {};
+      const updatedList = (commentsMap[entryId] || []).filter((c) => c.id !== commentId);
+      return {
+        ...current,
+        comments: {
+          ...commentsMap,
+          [entryId]: updatedList
+        }
+      };
+    });
   };
 
   const handleToggleTheme = () => {
     setIsDark((prev) => !prev);
   };
 
-  // Whenever a new entry is created, prepend it to the top immediately
-  const handleSaveEntry = (newEntry) => {
+  // Submit new thought or feeling:
+  // Prepend to top immediately and persist via PUT SHARED_DB_URL
+  const handleSaveEntry = async (newEntry) => {
+    // 1. Optimistic local update
     setEntries((prev) => [newEntry, ...prev]);
+
+    // 2. Persist to shared cloud database
+    await mutateCloudData((current) => {
+      const thoughts = current.thoughts || [];
+      const existingIndex = thoughts.findIndex((t) => t.id === newEntry.id);
+      const nextThoughts = existingIndex >= 0
+        ? thoughts.map((t, idx) => (idx === existingIndex ? newEntry : t))
+        : [newEntry, ...thoughts];
+
+      return {
+        ...current,
+        thoughts: nextThoughts
+      };
+    });
   };
 
   const handleScrollToLedger = () => {

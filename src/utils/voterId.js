@@ -1,8 +1,8 @@
-// Multi-tier voter identity: localStorage + Cookies + IndexedDB
-// Combines crypto.randomUUID() and browser fingerprint for persistent one-like enforcement
+// Multi-tier voter identity: localStorage ('tf_voter_id') + Cookies + IndexedDB
+// Combines crypto.randomUUID() and browser fingerprint for persistent 1-like enforcement
 
-const STORAGE_KEY = 'sketchbook_voter_id';
-const COOKIE_NAME = 'sketchbook_voter_id';
+const PRIMARY_KEY = 'tf_voter_id';
+const LEGACY_KEY = 'sketchbook_voter_id';
 const DB_NAME = 'sketchbook_db';
 const STORE_NAME = 'identity';
 
@@ -39,7 +39,7 @@ async function getFromIndexedDB() {
     return new Promise((resolve) => {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const store = tx.objectStore(STORE_NAME);
-      const req = store.get(STORAGE_KEY);
+      const req = store.get(PRIMARY_KEY);
       req.onsuccess = () => resolve(req.result || null);
       req.onerror = () => resolve(null);
     });
@@ -54,7 +54,7 @@ async function saveToIndexedDB(val) {
     if (!db) return;
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
-    store.put(val, STORAGE_KEY);
+    store.put(val, PRIMARY_KEY);
   } catch {}
 }
 
@@ -79,15 +79,15 @@ function getBrowserFingerprint() {
 }
 
 export async function getPersistentVoterId() {
-  // 1. Check localStorage
+  // 1. Check localStorage ('tf_voter_id' and legacy)
   let id = null;
   try {
-    id = localStorage.getItem(STORAGE_KEY);
+    id = localStorage.getItem(PRIMARY_KEY) || localStorage.getItem(LEGACY_KEY);
   } catch {}
 
   // 2. Check Cookie
   if (!id) {
-    id = getCookie(COOKIE_NAME);
+    id = getCookie(PRIMARY_KEY) || getCookie(LEGACY_KEY);
   }
 
   // 3. Check IndexedDB
@@ -97,8 +97,12 @@ export async function getPersistentVoterId() {
 
   // If found, ensure all storage layers are synced
   if (id) {
-    try { localStorage.setItem(STORAGE_KEY, id); } catch {}
-    setCookie(COOKIE_NAME, id);
+    try {
+      localStorage.setItem(PRIMARY_KEY, id);
+      localStorage.setItem(LEGACY_KEY, id);
+    } catch {}
+    setCookie(PRIMARY_KEY, id);
+    setCookie(LEGACY_KEY, id);
     saveToIndexedDB(id);
     return id;
   }
@@ -110,11 +114,14 @@ export async function getPersistentVoterId() {
   const fp = getBrowserFingerprint();
   const newVoterId = `voter_${uuid}_${fp}`;
 
-  // Persist across all 3 tiers
-  try { localStorage.setItem(STORAGE_KEY, newVoterId); } catch {}
-  setCookie(COOKIE_NAME, newVoterId);
+  // Persist across all 3 tiers with 'tf_voter_id'
+  try {
+    localStorage.setItem(PRIMARY_KEY, newVoterId);
+    localStorage.setItem(LEGACY_KEY, newVoterId);
+  } catch {}
+  setCookie(PRIMARY_KEY, newVoterId);
+  setCookie(LEGACY_KEY, newVoterId);
   await saveToIndexedDB(newVoterId);
 
   return newVoterId;
 }
-
