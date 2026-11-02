@@ -5,6 +5,7 @@ import DigitalBookLayout from './components/DigitalBookLayout';
 import RetroStatusBar from './components/RetroStatusBar';
 import HandDrawnThoughtModal from './components/HandDrawnThoughtModal';
 import { INITIAL_ENTRIES } from './data/initialThoughts';
+import { getPersistentVoterId } from './utils/voterId';
 
 // Default owner passkey hash: SHA-256 of 'absurdharsh'
 const DEFAULT_OWNER_HASH = 'f1c094b28bf9330bee6b8191938df3d4234145b833526942740f7408821f880c';
@@ -50,6 +51,23 @@ export default function App() {
     return sortEntriesDescending(INITIAL_ENTRIES);
   });
 
+  // Persistent anonymous voter ID (UUID + browser fingerprint across localStorage + Cookies + IndexedDB)
+  const [voterId, setVoterId] = useState('');
+
+  useEffect(() => {
+    getPersistentVoterId().then((id) => setVoterId(id));
+  }, []);
+
+  // Real-Only Likes store: keyed by entry.id -> { count: number, likedBy: string[] }
+  // Every thought starts with 0 real likes unless explicitly liked by a user
+  const [likesData, setLikesData] = useState(() => {
+    try {
+      const saved = localStorage.getItem('thoughts_sketchbook_likes_v1');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {};
+  });
+
   // Anonymous Comments store: keyed by entry.id
   const [comments, setComments] = useState(() => {
     try {
@@ -92,12 +110,50 @@ export default function App() {
     } catch {}
   }, [entries]);
 
+  // Sync real-only likes to local storage
+  useEffect(() => {
+    try {
+      localStorage.setItem('thoughts_sketchbook_likes_v1', JSON.stringify(likesData));
+    } catch {}
+  }, [likesData]);
+
   // Sync anonymous comments to local storage
   useEffect(() => {
     try {
       localStorage.setItem('thoughts_sketchbook_comments_v1', JSON.stringify(comments));
     } catch {}
   }, [comments]);
+
+  // Strict one-like-per-user enforcement: adds or toggles off voterId, never duplicates
+  const handleToggleLike = (entryId) => {
+    if (!voterId) return;
+
+    setLikesData((prev) => {
+      const entryLikes = prev[entryId] || { count: 0, likedBy: [] };
+      const alreadyLiked = entryLikes.likedBy.includes(voterId);
+
+      let nextLikedBy;
+      let nextCount;
+
+      if (alreadyLiked) {
+        // Toggle off: remove voterId and decrement count
+        nextLikedBy = entryLikes.likedBy.filter((id) => id !== voterId);
+        nextCount = Math.max(0, entryLikes.count - 1);
+      } else {
+        // Toggle on: add voterId (UNIQUE enforcement) and increment count
+        nextLikedBy = [...entryLikes.likedBy, voterId];
+        nextCount = entryLikes.count + 1;
+      }
+
+      return {
+        ...prev,
+        [entryId]: {
+          count: nextCount,
+          likedBy: nextLikedBy
+        }
+      };
+    });
+  };
 
   // Hidden Owner Unlock Trigger (Ctrl+Shift+D / Cmd+Shift+D OR ?owner=true)
   useEffect(() => {
@@ -176,7 +232,6 @@ export default function App() {
   const handleAddComment = (entryId, text) => {
     if (!text.trim()) return;
 
-    // Format human-readable time (e.g., 'just now')
     const now = new Date();
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -251,6 +306,9 @@ export default function App() {
             comments={comments}
             onAddComment={handleAddComment}
             onDeleteComment={handleDeleteComment}
+            likesData={likesData}
+            voterId={voterId}
+            onToggleLike={handleToggleLike}
           />
 
           {/* Hand-Drawn Scroll Back To Top */}

@@ -116,3 +116,20 @@ export function DoodleCircle({ className = 'w-full h-full' }) {
   );
 }
 
+export function DoodleHeart({ className = 'w-5 h-5', filled = false }) {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      fill={filled ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth="2.0"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`hand-drawn-line ${className}`}
+    >
+      <path d="M16 27 C16 27 5 19 5 11 C5 6 9 3 13 4 C15 4.7 15.6 6.5 16 8 C16.4 6.5 17 4.7 19 4 C23 3 27 6 27 11 C27 19 16 27 16 27 Z" />
+    </svg>
+  );
+}
+
+

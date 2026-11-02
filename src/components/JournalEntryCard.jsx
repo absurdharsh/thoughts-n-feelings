@@ -5,6 +5,7 @@ import {
   DoodleSpiral,
   DoodleSpark,
   DoodleArrowDown,
+  DoodleHeart,
   DoodleDivider
 } from './HandDrawnDoodles';
 
@@ -35,7 +36,10 @@ export default function JournalEntryCard({
   onDeleteEntry,
   comments = [],
   onAddComment,
-  onDeleteComment
+  onDeleteComment,
+  hasLiked = false,
+  likeCount = 0,
+  onToggleLike
 }) {
   const [copied, setCopied] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -150,14 +154,35 @@ export default function JournalEntryCard({
 
       {/* Bottom Footer Actions */}
       <div className="mt-8 pt-4 flex items-center justify-between font-handwritten text-base sm:text-lg">
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="naked-link scribble-hover text-ink/70 dark:text-darkInk/70 hover:text-ink dark:hover:text-darkInk"
-          title="Copy this entry to clipboard"
-        >
-          {copied ? '✓ copied to clipboard!' : 'copy thought'}
-        </button>
+        <div className="flex items-center gap-5 sm:gap-6">
+          {/* Subtle Hand-Drawn Heart Like Trigger (Real-only likes, one per user) */}
+          <button
+            type="button"
+            onClick={onToggleLike}
+            className={`naked-link scribble-hover flex items-center gap-1.5 transition-transform active:scale-90 ${
+              hasLiked 
+                ? 'text-ink dark:text-darkInk font-bold' 
+                : 'text-ink/60 dark:text-darkInk/60 hover:text-ink dark:hover:text-darkInk'
+            }`}
+            title={hasLiked ? "Unlike this thought" : "Like this thought"}
+          >
+            <DoodleHeart 
+              className={`w-5 h-5 transition-transform ${hasLiked ? 'scale-110' : ''}`} 
+              filled={hasLiked} 
+            />
+            <span className="text-base select-none">{likeCount}</span>
+          </button>
+
+          {/* Copy Thought Link */}
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="naked-link scribble-hover text-ink/70 dark:text-darkInk/70 hover:text-ink dark:hover:text-darkInk"
+            title="Copy this entry to clipboard"
+          >
+            {copied ? '✓ copied to clipboard!' : 'copy thought'}
+          </button>
+        </div>
 
         <span className="text-ink/40 dark:text-darkInk/40">
           folio {index + 1} of {total}
