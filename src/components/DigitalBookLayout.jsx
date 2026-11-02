@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import JournalEntryCard from './JournalEntryCard';
 import { DoodleCircle } from './HandDrawnDoodles';
 
-export default function DigitalBookLayout({ entries, onOpenNewEntryModal }) {
+export default function DigitalBookLayout({ entries, onOpenNewEntryModal, isOwner = false, onDeleteEntry }) {
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -105,6 +105,8 @@ export default function DigitalBookLayout({ entries, onOpenNewEntryModal }) {
               entry={entry}
               index={index}
               total={filteredEntries.length}
+              isOwner={isOwner}
+              onDeleteEntry={onDeleteEntry}
             />
           ))
         )}

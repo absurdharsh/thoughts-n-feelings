@@ -6,6 +6,17 @@ import RetroStatusBar from './components/RetroStatusBar';
 import HandDrawnThoughtModal from './components/HandDrawnThoughtModal';
 import { INITIAL_ENTRIES } from './data/initialThoughts';
 
+// Default owner passkey hash: SHA-256 of 'absurdharsh'
+const DEFAULT_OWNER_HASH = 'f1c094b28bf9330bee6b8191938df3d4234145b833526942740f7408821f880c';
+
+async function sha256(text) {
+  const enc = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 export default function App() {
   // Binary Theme: Light mode (Paper #FFFFFF, Ink #000000) by default
   const [isDark, setIsDark] = useState(() => {
@@ -21,13 +32,24 @@ export default function App() {
       const saved = localStorage.getItem('thoughts_sketchbook_entries_v4');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length >= INITIAL_ENTRIES.length) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
     return INITIAL_ENTRIES;
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Secret Owner Session (verified via SHA-256)
+  const [isOwner, setIsOwner] = useState(() => {
+    try {
+      const session = localStorage.getItem('sketchbook_owner_session');
+      const target = localStorage.getItem('sketchbook_owner_hash') || DEFAULT_OWNER_HASH;
+      return Boolean(session && session === target);
+    } catch {
+      return false;
+    }
+  });
 
   // Sync theme with HTML root class
   useEffect(() => {
@@ -48,6 +70,79 @@ export default function App() {
       localStorage.setItem('thoughts_sketchbook_entries_v4', JSON.stringify(entries));
     } catch {}
   }, [entries]);
+
+  // Hidden Owner Unlock Trigger (Ctrl+Shift+D / Cmd+Shift+D OR ?owner=true)
+  useEffect(() => {
+    const handleUnlockPrompt = async () => {
+      const target = localStorage.getItem('sketchbook_owner_hash') || DEFAULT_OWNER_HASH;
+      const currentSession = localStorage.getItem('sketchbook_owner_session');
+
+      if (currentSession === target) {
+        const lock = window.confirm('Owner mode is currently active. Would you like to lock it?');
+        if (lock) {
+          localStorage.removeItem('sketchbook_owner_session');
+          setIsOwner(false);
+          window.alert('Owner mode locked.');
+        }
+        return;
+      }
+
+      const input = window.prompt('Enter owner passkey:');
+      if (!input) return;
+
+      try {
+        const hash = await sha256(input.trim());
+        if (hash === target) {
+          localStorage.setItem('sketchbook_owner_session', hash);
+          setIsOwner(true);
+          window.alert('Owner mode verified & unlocked.');
+        } else {
+          window.alert('Invalid passkey.');
+        }
+      } catch (err) {
+        console.error('Owner authentication error:', err);
+      }
+    };
+
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+        e.preventDefault();
+        handleUnlockPrompt();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    // URL trigger: ?owner=true
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('owner') === 'true') {
+        handleUnlockPrompt();
+        const cleanUrl = window.location.pathname + window.location.hash;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    } catch {}
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  const handleDeleteEntry = (entryId) => {
+    // Security check: verify owner session before executing deletion
+    try {
+      const session = localStorage.getItem('sketchbook_owner_session');
+      const target = localStorage.getItem('sketchbook_owner_hash') || DEFAULT_OWNER_HASH;
+      if (session !== target) {
+        window.alert('Unauthorized: Owner session required.');
+        return;
+      }
+    } catch {
+      return;
+    }
+
+    setEntries((prev) => prev.filter((item) => item.id !== entryId));
+  };
 
   const handleToggleTheme = () => {
     setIsDark((prev) => !prev);
@@ -82,6 +177,8 @@ export default function App() {
           <DigitalBookLayout
             entries={entries}
             onOpenNewEntryModal={() => setIsModalOpen(true)}
+            isOwner={isOwner}
+            onDeleteEntry={handleDeleteEntry}
           />
 
           {/* Hand-Drawn Scroll Back To Top */}

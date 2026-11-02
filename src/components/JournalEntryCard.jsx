@@ -27,7 +27,7 @@ function renderDoodleIcon(doodleType) {
   }
 }
 
-export default function JournalEntryCard({ entry, index, total }) {
+export default function JournalEntryCard({ entry, index, total, isOwner = false, onDeleteEntry }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -37,11 +37,26 @@ export default function JournalEntryCard({ entry, index, total }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Shift-click deletion (Owner only)
+  const handleArticleClick = (e) => {
+    if (isOwner && e.shiftKey && onDeleteEntry) {
+      e.preventDefault();
+      e.stopPropagation();
+      const confirmed = window.confirm(`Delete entry "${entry.title}"?`);
+      if (confirmed) {
+        onDeleteEntry(entry.id);
+      }
+    }
+  };
+
   // Split multi-paragraph content cleanly
   const paragraphs = entry.content.split('\n\n').filter(Boolean);
 
   return (
-    <article className="relative py-12 select-text first:pt-4">
+    <article 
+      onClick={handleArticleClick}
+      className="relative py-12 select-text first:pt-4"
+    >
       {/* Top Entry Metadata: Number + Category + Margin Doodle */}
       <div className="flex items-center justify-between pb-3">
         <div className="flex items-baseline gap-3">
@@ -51,6 +66,21 @@ export default function JournalEntryCard({ entry, index, total }) {
           <span className="font-handwritten text-base sm:text-lg uppercase tracking-wider text-ink/60 dark:text-darkInk/60">
             {entry.type}
           </span>
+          {isOwner && onDeleteEntry && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm(`Delete entry "${entry.title}"?`)) {
+                  onDeleteEntry(entry.id);
+                }
+              }}
+              className="text-xs opacity-40 hover:opacity-100 transition-opacity ml-1 cursor-pointer select-none"
+              title="Delete this entry (Owner only)"
+            >
+              [x]
+            </button>
+          )}
         </div>
 
         {/* Playful margin doodle */}
