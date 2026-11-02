@@ -91,5 +91,56 @@ I am a thousand winds that blow. I am the diamond glints on snow. I am the sunli
 “Even your shadow leaves you, when you're in amidst darkness.”
 
 Desire is the constant longing for what is absent, blinding the eye to the ink on the page right in front of you. When darkness deepens and all external reflections vanish, only the core remains. When there is a will, the path draws itself.`
+  },
+  {
+    id: 'entry-07',
+    number: '07',
+    type: 'quote',
+    title: 'Fall in Love With What You Have',
+    author: 'absurdharsh',
+    date: 'Autumn 2026',
+    doodle: 'star',
+    content: `“Fall in love with what you have, not with what you want.”
+
+Desire is the constant longing for what is absent, blinding the eye to the ink on the page right in front of you. When you constantly chase what you want, what you already hold turns into invisible background noise. Finding reverence in the ordinary is the only quiet freedom that lasts.`
+  },
+  {
+    id: 'entry-08',
+    number: '08',
+    type: 'quote',
+    title: 'When There Is a Will, There Is a Way',
+    author: 'absurdharsh',
+    date: 'Autumn 2026',
+    doodle: 'spark',
+    content: `“When there is a will, there is a way.”
+
+Paths aren't laid out in advance waiting to be discovered like paved sidewalks. When conviction is absolute, the terrain gives way beneath your stride. The hand sketches the road into existence line by line.`
+  },
+  {
+    id: 'entry-09',
+    number: '09',
+    type: 'quote',
+    title: 'In Amidst Darkness',
+    author: 'absurdharsh',
+    date: 'Dusk',
+    doodle: 'arrow',
+    content: `“Even your shadow leaves you, when you're in amidst darkness.”
+
+People get surprised when presence has conditions. But even light-dependent companions vanish the second the sun ducks behind the clouds. To stand in complete darkness means you are stripped of all reflections—leaving behind only what is genuinely real.`
+  },
+  {
+    id: 'entry-10',
+    number: '10',
+    type: 'thought',
+    title: 'Doing That Pretty With CSS',
+    author: 'absurdharsh',
+    date: 'Autumn 2026',
+    doodle: 'spiral',
+    content: `From the initial index & manifesto:
+“i have only really done things with html and i havent even given it any structure.
+well i dont really know if i want to right now, but we will see to that.
+one thing i do wanna do is that i want to make this pretty with css so we will be DOING THAT SHIT FRFR.”
+
+An authentic record of writing without pretense, logging thoughts and feelings before the memory fades.`
   }
 ];
