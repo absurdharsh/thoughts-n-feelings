@@ -29,7 +29,7 @@ export default function HandDrawnHero({
           <button
             type="button"
             onClick={onOpenNewEntryModal}
-            className="naked-link scribble-hover font-handwritten text-base sm:text-lg flex items-center gap-1.5"
+            className="cta-link naked-link scribble-hover font-handwritten text-base sm:text-lg flex items-center gap-1.5 text-black dark:text-white"
             title="Inscribe a new thought"
           >
             <DoodleQuill className="w-5 h-5 text-ink dark:text-darkInk" />
@@ -40,7 +40,7 @@ export default function HandDrawnHero({
           <button
             type="button"
             onClick={onToggleTheme}
-            className="naked-link p-1 transition-transform duration-200 hover:rotate-12 hover:scale-110"
+            className="cta-link naked-link p-1 transition-transform duration-200 hover:rotate-12 hover:scale-110 text-black dark:text-white"
             title={isDark ? 'Switch to Paper (Light)' : 'Switch to Ink (Dark)'}
             aria-label="Toggle theme"
           >
@@ -53,26 +53,45 @@ export default function HandDrawnHero({
         </div>
       </nav>
 
-      {/* Main Hand-Drawn Hero Title */}
-      <div className="text-center pt-14 pb-8 relative">
-        {/* Floating Accent Doodles */}
-        <div className="absolute top-8 right-6 sm:right-16 opacity-75 pointer-events-none transform rotate-12">
-          <DoodleStar className="w-8 h-8 sm:w-10 sm:h-10 text-ink dark:text-darkInk" />
+      {/* Main Hand-Drawn Hero Title Block */}
+      <div className="text-center pt-14 pb-8 relative z-10">
+        {/* Delicate Hand-Drawn Sketch Framing Ribbon (Delicate 1.8px line framing whitespace around the block) */}
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none -z-10 overflow-visible opacity-20 dark:opacity-15"
+          viewBox="0 0 800 450"
+          fill="none"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="M 35 25 C 160 12, 640 10, 765 28 C 785 90, 785 360, 765 425 C 640 440, 160 435, 35 420 C 15 360, 15 90, 35 25 Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeDasharray="6 4"
+            className="hand-drawn-line text-ink dark:text-darkInk"
+          />
+        </svg>
+
+        {/* Floating Accent Doodle - Positioned carefully in the top corner margin */}
+        <div className="absolute top-4 right-4 sm:right-12 opacity-80 pointer-events-none transform rotate-12">
+          <DoodleStar className="w-7 h-7 sm:w-9 sm:h-9 text-ink dark:text-darkInk" />
         </div>
 
-        <h1 className="font-editorial italic text-6xl sm:text-8xl md:text-9xl leading-[0.88] tracking-tight text-ink dark:text-darkInk transition-colors duration-200">
+        {/* Hero Title with Paper Knockout Halo (-webkit-text-stroke: 10px var(--bg-color)) */}
+        <h1 className="hero-title font-editorial italic text-6xl sm:text-8xl md:text-9xl leading-[0.88] tracking-tight text-black dark:text-white transition-colors duration-200 relative z-10 select-none">
           thoughts<br />
-          <span className="font-handwritten not-italic text-4xl sm:text-6xl opacity-60 inline-block my-1">&amp;</span><br />
+          <span className="font-handwritten not-italic text-4xl sm:text-6xl opacity-70 inline-block my-1">&amp;</span><br />
           feelings
         </h1>
 
-        <p className="font-handwritten text-xl sm:text-2xl text-ink/80 dark:text-darkInk/80 max-w-xl mx-auto mt-6 leading-relaxed">
+        {/* Subtitle with High-Contrast Solid Ink and Paper Knockout Halo */}
+        <p className="hero-subtitle font-handwritten text-[1.25rem] sm:text-[1.4rem] font-semibold text-black dark:text-white max-w-xl mx-auto mt-6 leading-relaxed relative z-10">
           an ink and paper sketchbook of quiet notes, personal paradoxes, and midnight reflections by{' '}
           <a
             href="https://www.instagram.com/absurdnigga"
             target="_blank"
             rel="noreferrer"
-            className="scribble-hover font-editorial italic underline decoration-1 underline-offset-4"
+            className="cta-link scribble-hover font-editorial italic underline decoration-1 underline-offset-4 font-bold text-black dark:text-white"
           >
             absurdharsh
           </a>
@@ -80,11 +99,11 @@ export default function HandDrawnHero({
         </p>
 
         {/* Scroll Trigger Naked Link */}
-        <div className="pt-8 flex justify-center">
+        <div className="pt-8 flex justify-center relative z-10">
           <button
             type="button"
             onClick={onScrollToLedger}
-            className="naked-link scribble-hover font-handwritten text-lg sm:text-xl flex items-center gap-2 group"
+            className="cta-link naked-link scribble-hover font-handwritten text-lg sm:text-xl flex items-center gap-2 group text-black dark:text-white font-medium"
           >
             <span>read the sketchbook</span>
             <DoodleArrowDown className="w-5 h-5 transition-transform group-hover:translate-y-1" />
@@ -97,4 +116,3 @@ export default function HandDrawnHero({
     </header>
   );
 }
-
