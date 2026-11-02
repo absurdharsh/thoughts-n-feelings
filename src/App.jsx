@@ -15,6 +15,7 @@ import {
   fetchThoughtsFromSupabase,
   insertThoughtToSupabase,
   fetchCommentsFromSupabase,
+  fetchCommentsForThoughtFromSupabase,
   insertCommentToSupabase,
   fetchLikesFromSupabase,
   toggleLikeInSupabase,
@@ -410,6 +411,46 @@ export default function App() {
     }
   };
 
+  // Fetch fresh comments from remote whenever a user opens a comment dropdown
+  const handleOpenComments = useCallback(async (entryId) => {
+    try {
+      if (isSupabaseConfigured) {
+        const [allComments, thoughtComments] = await Promise.all([
+          fetchCommentsFromSupabase(),
+          fetchCommentsForThoughtFromSupabase(entryId)
+        ]);
+
+        if (allComments) {
+          setComments(allComments);
+          try {
+            localStorage.setItem('thoughts_sketchbook_comments_v1', JSON.stringify(allComments));
+          } catch {}
+        } else if (thoughtComments) {
+          setComments((prev) => {
+            const next = {
+              ...prev,
+              [entryId]: thoughtComments
+            };
+            try {
+              localStorage.setItem('thoughts_sketchbook_comments_v1', JSON.stringify(next));
+            } catch {}
+            return next;
+          });
+        }
+      } else {
+        const cloud = await fetchCloudData();
+        if (cloud && cloud.comments) {
+          setComments(cloud.comments);
+          try {
+            localStorage.setItem('thoughts_sketchbook_comments_v1', JSON.stringify(cloud.comments));
+          } catch {}
+        }
+      }
+    } catch (err) {
+      console.warn('[Sync] Error refreshing comments on open:', err);
+    }
+  }, []);
+
   // Add anonymous comment to an entry:
   // Persisted immediately to Supabase (or fallback cloud DB)
   const handleAddComment = async (entryId, text) => {
@@ -426,19 +467,29 @@ export default function App() {
     };
 
     // 1. Optimistic local update
-    setComments((prev) => ({
-      ...prev,
-      [entryId]: [...(prev[entryId] || []), newComment]
-    }));
+    setComments((prev) => {
+      const updated = {
+        ...prev,
+        [entryId]: [...(prev[entryId] || []), newComment]
+      };
+      try {
+        localStorage.setItem('thoughts_sketchbook_comments_v1', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
 
     // 2. Persist to Supabase (or fallback cloud DB)
     if (isSupabaseConfigured) {
       const inserted = await insertCommentToSupabase(entryId, text.trim());
       if (inserted) {
-        setComments((prev) => ({
-          ...prev,
-          [entryId]: (prev[entryId] || []).map((c) => (c.id === newComment.id ? inserted : c))
-        }));
+        // Fetch fresh comments from Supabase to sync across all visitors
+        const freshComments = await fetchCommentsFromSupabase();
+        if (freshComments) {
+          setComments(freshComments);
+          try {
+            localStorage.setItem('thoughts_sketchbook_comments_v1', JSON.stringify(freshComments));
+          } catch {}
+        }
       }
     } else {
       await mutateCloudData((current) => {
@@ -564,6 +615,7 @@ export default function App() {
             likesData={likesData}
             voterId={voterId}
             onToggleLike={handleToggleLike}
+            onOpenComments={handleOpenComments}
           />
 
           {/* Hand-Drawn Scroll Back To Top */}

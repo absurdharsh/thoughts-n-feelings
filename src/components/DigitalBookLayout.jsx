@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import JournalEntryCard from './JournalEntryCard';
 import { DoodleCircle } from './HandDrawnDoodles';
+import { getCommentsForEntry } from '../utils/commentUtils';
 
 export default function DigitalBookLayout({
   entries,
@@ -12,11 +13,38 @@ export default function DigitalBookLayout({
   onDeleteComment,
   likesData = {},
   voterId = '',
-  onToggleLike
+  onToggleLike,
+  onOpenComments
 }) {
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'oldest' | 'popular'
+
+  // Focus Mode & Collapsible Comments: Only one thought's comment drawer open at a time
+  const [activeCommentEntryId, setActiveCommentEntryId] = useState(null);
+
+  // Pressing Escape smoothly closes the comment drawer and restores focus
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.key === 'Escape' || e.key === 'Esc') && activeCommentEntryId) {
+        setActiveCommentEntryId(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeCommentEntryId]);
+
+  // Toggle comments and fetch latest remote comments upon opening
+  const handleToggleComments = (entryId) => {
+    setActiveCommentEntryId((prev) => {
+      const isOpening = prev !== entryId;
+      const nextId = isOpening ? entryId : null;
+      if (isOpening && onOpenComments) {
+        onOpenComments(entryId);
+      }
+      return nextId;
+    });
+  };
 
   // Dynamic sorting (Newest, Oldest, or Most Popular) and category/search filtering
   const filteredEntries = useMemo(() => {
@@ -72,12 +100,28 @@ export default function DigitalBookLayout({
   ];
 
   return (
-    <section id="digital-ledger" className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-6">
-      {/* Category Filter & Feed Controls (Sort & Search) */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-ink/20 dark:border-darkInk/20 font-handwritten">
+    <section id="digital-ledger" className="relative w-full max-w-3xl mx-auto px-4 sm:px-6 py-12">
+      {/* Click-outside backdrop for Focus Mode: smoothly closes comment box on click outside */}
+      {activeCommentEntryId && (
+        <div 
+          className="fixed inset-0 z-20 cursor-pointer"
+          onClick={() => setActiveCommentEntryId(null)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Editorial Navigation: Hand-Drawn Category Selector & Search */}
+      <div 
+        style={{
+          opacity: activeCommentEntryId ? 0.2 : 1,
+          pointerEvents: activeCommentEntryId ? 'none' : 'auto',
+          transition: 'opacity 0.4s ease'
+        }}
+        className="flex flex-col md:flex-row items-baseline justify-between gap-6 pb-6 border-b border-ink/20 dark:border-darkInk/20 font-handwritten text-lg sm:text-xl"
+      >
         
-        {/* Naked Category Links with Hand-Drawn Circle on Active */}
-        <div className="flex items-center gap-6 sm:gap-8 text-lg sm:text-xl">
+        {/* Category Filter Pills */}
+        <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
           {categories.map((cat) => {
             const isActive = activeFilter === cat.id;
             const count = cat.id === 'all' 
@@ -130,8 +174,8 @@ export default function DigitalBookLayout({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="keywords..."
-              className="bg-transparent text-ink dark:text-darkInk placeholder:text-ink/40 dark:placeholder:text-darkInk/40 outline-none w-28 sm:w-36 font-handwritten text-base"
+              placeholder="find words..."
+              className="bg-transparent outline-none font-handwritten text-base w-24 sm:w-32 text-ink dark:text-darkInk placeholder:text-ink/40 dark:placeholder:text-darkInk/40"
             />
             {searchQuery && (
               <button
@@ -168,6 +212,10 @@ export default function DigitalBookLayout({
             const hasLiked = Boolean(voterId && voterList.includes(voterId));
             const likeCount = voterList.length;
 
+            const entryComments = getCommentsForEntry(comments, entry);
+            const isCommentsOpen = activeCommentEntryId === entry.id;
+            const isDimmed = Boolean(activeCommentEntryId && activeCommentEntryId !== entry.id);
+
             return (
               <JournalEntryCard
                 key={entry.id || index}
@@ -176,12 +224,15 @@ export default function DigitalBookLayout({
                 total={filteredEntries.length}
                 isOwner={isOwner}
                 onDeleteEntry={onDeleteEntry}
-                comments={comments[entry.id] || []}
+                comments={entryComments}
                 onAddComment={(text) => onAddComment && onAddComment(entry.id, text)}
                 onDeleteComment={(commentId) => onDeleteComment && onDeleteComment(entry.id, commentId)}
                 hasLiked={hasLiked}
                 likeCount={likeCount}
                 onToggleLike={() => onToggleLike && onToggleLike(entry.id)}
+                isCommentsOpen={isCommentsOpen}
+                onToggleComments={() => handleToggleComments(entry.id)}
+                isDimmed={isDimmed}
               />
             );
           })

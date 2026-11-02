@@ -93,10 +93,8 @@ export async function insertThoughtToSupabase(entry) {
       likes_count: 0
     };
 
-    // If entry has a valid UUID, use it; otherwise let Postgres gen_random_uuid()
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (entry.id && uuidRegex.test(entry.id)) {
-      payload.id = entry.id;
+    if (entry.id) {
+      payload.id = String(entry.id);
     }
 
     const { data, error } = await supabase
@@ -165,7 +163,7 @@ export async function insertCommentToSupabase(thoughtId, text) {
     const { data, error } = await supabase
       .from('comments')
       .insert([{
-        thought_id: thoughtId,
+        thought_id: String(thoughtId),
         content: text.slice(0, 1000)
       }])
       .select()
@@ -178,13 +176,43 @@ export async function insertCommentToSupabase(thoughtId, text) {
 
     const time = new Date(data.created_at);
     return {
-      id: data.id,
+      id: String(data.id),
       text: data.content,
       timestamp: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       createdAt: time.getTime()
     };
   } catch (err) {
     console.error('[Supabase] Network error inserting comment:', err);
+    return null;
+  }
+}
+
+// 4b. Fetch comments specifically for a single thought
+export async function fetchCommentsForThoughtFromSupabase(thoughtId) {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('thought_id', String(thoughtId))
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.warn('[Supabase] Error fetching thought comments:', error.message);
+      return null;
+    }
+
+    return (data || []).map((c) => {
+      const time = new Date(c.created_at);
+      return {
+        id: String(c.id),
+        text: c.content,
+        timestamp: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        createdAt: time.getTime()
+      };
+    });
+  } catch (err) {
+    console.warn('[Supabase] Error fetching thought comments:', err);
     return null;
   }
 }
@@ -204,10 +232,11 @@ export async function fetchLikesFromSupabase() {
 
     const grouped = {};
     (data || []).forEach((row) => {
-      if (!grouped[row.thought_id]) {
-        grouped[row.thought_id] = [];
+      const tid = String(row.thought_id);
+      if (!grouped[tid]) {
+        grouped[tid] = [];
       }
-      grouped[row.thought_id].push(row.voter_id);
+      grouped[tid].push(row.voter_id);
     });
 
     return grouped;
@@ -222,8 +251,8 @@ export async function toggleLikeInSupabase(thoughtId, voterId) {
   if (!supabase) return null;
   try {
     const { data, error } = await supabase.rpc('toggle_like', {
-      target_thought_id: thoughtId,
-      user_voter_id: voterId
+      target_thought_id: String(thoughtId),
+      user_voter_id: String(voterId)
     });
 
     if (error) {
@@ -243,7 +272,7 @@ export async function ownerDeleteThoughtInSupabase(thoughtId, secretPasskey) {
   if (!supabase) return false;
   try {
     const { data, error } = await supabase.rpc('owner_delete_thought', {
-      target_id: thoughtId,
+      target_id: String(thoughtId),
       secret_passkey: secretPasskey
     });
 
@@ -264,7 +293,7 @@ export async function ownerDeleteCommentInSupabase(commentId, secretPasskey) {
   if (!supabase) return false;
   try {
     const { data, error } = await supabase.rpc('owner_delete_comment', {
-      target_id: commentId,
+      target_id: String(commentId),
       secret_passkey: secretPasskey
     });
 

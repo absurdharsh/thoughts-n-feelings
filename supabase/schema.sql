@@ -1,5 +1,6 @@
 -- ==========================================================================
 -- Thoughts 'n' Feelings — Supabase / PostgreSQL Schema & RLS Policies
+-- Supports TEXT thought_ids (both static 'entry-01' / '1' and dynamic UUIDs)
 -- ==========================================================================
 
 -- Enable pgcrypto so your owner password is hashed on the server and never stored in plain text
@@ -18,9 +19,9 @@ insert into private_owner_config (id, password_hash)
 values (1, crypt('CHANGE_THIS_TO_YOUR_SECRET_PASSWORD', gen_salt('bf')))
 on conflict (id) do update set password_hash = excluded.password_hash;
 
--- 2. Thoughts table
+-- 2. Thoughts table (id is TEXT to support both static strings and generated UUIDs)
 create table if not exists thoughts (
-  id uuid default gen_random_uuid() primary key,
+  id text default gen_random_uuid()::text primary key,
   title text not null check (char_length(title) between 1 and 200),
   content text not null check (char_length(content) between 1 and 5000),
   category text default 'thought',
@@ -28,22 +29,26 @@ create table if not exists thoughts (
   created_at timestamptz default now() not null
 );
 
--- 3. Anonymous Comments table
+-- 3. Anonymous Comments table (thought_id is TEXT for universal compatibility)
 create table if not exists comments (
-  id uuid default gen_random_uuid() primary key,
-  thought_id uuid references thoughts(id) on delete cascade not null,
+  id text default gen_random_uuid()::text primary key,
+  thought_id text not null,
   content text not null check (char_length(content) between 1 and 1000),
   created_at timestamptz default now() not null
 );
 
--- 4. Likes table (Strict 1-like-per-user enforced by Postgres)
+-- 4. Likes table (Strict 1-like-per-user enforced by Postgres, thought_id is TEXT)
 create table if not exists likes (
-  id uuid default gen_random_uuid() primary key,
-  thought_id uuid references thoughts(id) on delete cascade not null,
+  id text default gen_random_uuid()::text primary key,
+  thought_id text not null,
   voter_id text not null check (char_length(voter_id) between 10 and 128),
   created_at timestamptz default now() not null,
   unique(thought_id, voter_id)
 );
+
+-- Create helpful indexes for performance
+create index if not exists idx_comments_thought_id on comments(thought_id);
+create index if not exists idx_likes_thought_id on likes(thought_id);
 
 -- 5. Strict Row Level Security (Public can ONLY Read and Insert — NEVER Update or Delete)
 alter table thoughts enable row level security;
@@ -59,7 +64,7 @@ create policy "Public insert comments" on comments for insert with check (true);
 create policy "Public read likes" on likes for select using (true);
 
 -- 6. Tamper-Proof Server-Side Like Function (1 like max per voter_id)
-create or replace function toggle_like(target_thought_id uuid, user_voter_id text)
+create or replace function toggle_like(target_thought_id text, user_voter_id text)
 returns int language plpgsql security definer as $$
 declare
   new_count int;
@@ -77,7 +82,7 @@ end;
 $$;
 
 -- 7. Tamper-Proof Server-Side Owner Delete Functions (Verifies bcrypt hash inside Postgres)
-create or replace function owner_delete_thought(target_id uuid, secret_passkey text)
+create or replace function owner_delete_thought(target_id text, secret_passkey text)
 returns boolean language plpgsql security definer as $$
 declare
   stored_hash text;
@@ -85,6 +90,8 @@ begin
   select password_hash into stored_hash from private_owner_config where id = 1;
   if stored_hash is not null and stored_hash = crypt(secret_passkey, stored_hash) then
     delete from thoughts where id = target_id;
+    delete from comments where thought_id = target_id;
+    delete from likes where thought_id = target_id;
     return true;
   else
     raise exception 'Unauthorized: Invalid Owner Passkey';
@@ -92,7 +99,7 @@ begin
 end;
 $$;
 
-create or replace function owner_delete_comment(target_id uuid, secret_passkey text)
+create or replace function owner_delete_comment(target_id text, secret_passkey text)
 returns boolean language plpgsql security definer as $$
 declare
   stored_hash text;
@@ -106,4 +113,3 @@ begin
   end if;
 end;
 $$;
-

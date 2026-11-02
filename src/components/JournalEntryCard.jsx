@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import {
-  DoodleEye,
-  DoodleStar,
   DoodleSpiral,
   DoodleSpark,
   DoodleArrowDown,
   DoodleHeart,
-  DoodleDivider
+  DoodleDivider,
+  DoodleEye,
+  DoodleStar
 } from './HandDrawnDoodles';
 
-// Map doodle keys to authentic hand-drawn SVG components
-function renderDoodleIcon(doodleType) {
-  const commonClasses = "w-7 h-7 sm:w-8 sm:h-8 text-ink dark:text-darkInk opacity-80";
-  switch (doodleType) {
+// Helper to render the appropriate margin doodle
+function renderMarginDoodle(type) {
+  const commonClasses = 'w-5 h-5 text-ink/70 dark:text-darkInk/70';
+  switch (type) {
     case 'star':
       return <DoodleStar className={commonClasses} />;
     case 'spiral':
@@ -39,7 +39,10 @@ export default function JournalEntryCard({
   onDeleteComment,
   hasLiked = false,
   likeCount = 0,
-  onToggleLike
+  onToggleLike,
+  isCommentsOpen = false,
+  onToggleComments,
+  isDimmed = false
 }) {
   const [copied, setCopied] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -56,22 +59,22 @@ export default function JournalEntryCard({
     if (isOwner && e.shiftKey && onDeleteEntry) {
       e.preventDefault();
       e.stopPropagation();
-      const confirmed = window.confirm(`Delete entry "${entry.title}"?`);
-      if (confirmed) {
+      if (window.confirm(`Delete entry "${entry.title}"?`)) {
         onDeleteEntry(entry.id);
       }
     }
   };
 
-  // Add anonymous comment
   const handleCommentSubmit = (e) => {
     e.preventDefault();
-    if (!commentText.trim() || !onAddComment) return;
-    onAddComment(commentText.trim());
+    if (!commentText.trim()) return;
+    if (onAddComment) {
+      onAddComment(commentText.trim());
+    }
     setCommentText('');
   };
 
-  // Shift-click deletion for individual anonymous comment (Owner only)
+  // Shift-click deletion for anonymous comment (Owner only)
   const handleCommentShiftClick = (e, commentId, text) => {
     if (isOwner && e.shiftKey && onDeleteComment) {
       e.preventDefault();
@@ -88,7 +91,15 @@ export default function JournalEntryCard({
   return (
     <article 
       onClick={handleArticleClick}
-      className="relative py-12 select-text first:pt-4"
+      style={{
+        opacity: isDimmed ? 0.12 : 1,
+        filter: isDimmed ? 'blur(2px)' : 'blur(0px)',
+        pointerEvents: isDimmed ? 'none' : 'auto',
+        transition: 'opacity 0.4s ease, filter 0.4s ease'
+      }}
+      className={`relative py-12 select-text first:pt-4 transition-all duration-400 ${
+        isCommentsOpen ? 'z-30' : 'z-10'
+      }`}
     >
       {/* Top Entry Metadata: Number + Category + Margin Doodle */}
       <div className="flex items-center justify-between pb-3">
@@ -116,37 +127,49 @@ export default function JournalEntryCard({
           )}
         </div>
 
-        {/* Playful margin doodle */}
-        <div className="transform hover:rotate-12 transition-transform duration-200">
-          {renderDoodleIcon(entry.doodle)}
+        <div className="flex items-center gap-2">
+          {renderMarginDoodle(entry.doodle)}
+          <span className="font-editorial italic text-sm sm:text-base text-ink/50 dark:text-darkInk/50">
+            {entry.date}
+          </span>
         </div>
       </div>
 
-      {/* Entry Title */}
-      <h2 className="font-editorial italic text-3xl sm:text-5xl text-ink dark:text-darkInk leading-tight mb-3">
+      {/* Main Entry Title */}
+      <h3 className="font-editorial italic text-2xl sm:text-4xl text-ink dark:text-darkInk font-bold tracking-tight mb-6 leading-tight">
         {entry.title}
-      </h2>
+      </h3>
 
-      {/* Author and Date Attribution */}
-      <div className="font-handwritten text-base sm:text-lg text-ink/70 dark:text-darkInk/70 mb-8 flex items-center gap-2">
-        <span>by {entry.author}</span>
-        <span>&bull;</span>
-        <span>{entry.date}</span>
-      </div>
+      {/* Multi-Paragraph Content with Editorial Whitespace */}
+      <div className="font-body text-lg sm:text-xl text-ink dark:text-darkInk leading-relaxed space-y-5">
+        {paragraphs.map((para, pIdx) => {
+          // If Ishika quote note, style subtly as handwritten attribution
+          if (para.includes('Ishika, a friend')) {
+            return (
+              <p
+                key={pIdx}
+                className="font-handwritten text-base sm:text-lg text-ink/60 dark:text-darkInk/60 italic pl-3 border-l-2 border-ink/20 dark:border-darkInk/20 my-4"
+              >
+                {para}
+              </p>
+            );
+          }
 
-      {/* Body Paragraphs with Natural Kerning (Zero Drop-Cap Split Gap) */}
-      <div className="space-y-6 max-w-2xl">
-        {paragraphs.map((pText, pIdx) => {
-          // Check if paragraph is a quote (starts with quote marks)
-          const isQuote = pText.trim().startsWith('“') || pText.trim().startsWith('"');
+          // If entry is a quote or stanza, render with indented margin
+          if (entry.type === 'quote') {
+            return (
+              <blockquote
+                key={pIdx}
+                className="font-editorial italic text-xl sm:text-2xl text-ink/90 dark:text-darkInk/90 pl-4 border-l-2 border-ink dark:border-darkInk my-4 whitespace-pre-line"
+              >
+                {para}
+              </blockquote>
+            );
+          }
+
           return (
-            <p
-              key={pIdx}
-              className={`font-body text-xl sm:text-2xl leading-[1.85] text-ink dark:text-darkInk ${
-                isQuote ? 'font-editorial italic text-2xl sm:text-3xl text-ink/90 dark:text-darkInk/90 pl-3 border-l-2 border-ink/40 dark:border-darkInk/40' : ''
-              }`}
-            >
-              {pText}
+            <p key={pIdx} className="break-words">
+              {para}
             </p>
           );
         })}
@@ -154,11 +177,14 @@ export default function JournalEntryCard({
 
       {/* Bottom Footer Actions */}
       <div className="mt-8 pt-4 flex items-center justify-between font-handwritten text-base sm:text-lg">
-        <div className="flex items-center gap-5 sm:gap-6">
+        <div className="flex items-center gap-5 sm:gap-6 flex-wrap">
           {/* Subtle Hand-Drawn Heart Like Trigger (Real-only likes, one per user) */}
           <button
             type="button"
-            onClick={onToggleLike}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleLike && onToggleLike();
+            }}
             className={`naked-link scribble-hover flex items-center gap-1.5 transition-transform active:scale-90 ${
               hasLiked 
                 ? 'text-ink dark:text-darkInk font-bold' 
@@ -173,10 +199,37 @@ export default function JournalEntryCard({
             <span className="text-base select-none">{likeCount}</span>
           </button>
 
+          {/* Collapsible Comments Trigger: comments (N) ↓ */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleComments && onToggleComments();
+            }}
+            className={`naked-link scribble-hover flex items-center gap-1.5 transition-colors select-none ${
+              isCommentsOpen 
+                ? 'text-ink dark:text-darkInk font-bold' 
+                : 'text-ink/70 dark:text-darkInk/70 hover:text-ink dark:hover:text-darkInk'
+            }`}
+            title={isCommentsOpen ? "Close comments" : "Open comments"}
+          >
+            <span>comments ({comments.length})</span>
+            <span
+              className={`inline-block transition-transform duration-300 transform ${
+                isCommentsOpen ? 'rotate-180' : 'rotate-0'
+              }`}
+            >
+              <DoodleArrowDown className="w-3.5 h-3.5 inline text-ink dark:text-darkInk" />
+            </span>
+          </button>
+
           {/* Copy Thought Link */}
           <button
             type="button"
-            onClick={handleCopy}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCopy();
+            }}
             className="naked-link scribble-hover text-ink/70 dark:text-darkInk/70 hover:text-ink dark:hover:text-darkInk"
             title="Copy this entry to clipboard"
           >
@@ -189,71 +242,81 @@ export default function JournalEntryCard({
         </span>
       </div>
 
-      {/* Anonymous Comments Section (Preserves hand-drawn sketchbook aesthetic) */}
-      <div className="mt-6 pt-4 border-t border-ink/10 dark:border-darkInk/10 font-handwritten">
-        {/* Render comments if any exist */}
-        {comments && comments.length > 0 && (
-          <div className="space-y-2 mb-4">
-            <div className="text-xs uppercase tracking-wider text-ink/40 dark:text-darkInk/40">
-              anonymous notes ({comments.length})
-            </div>
-            <div className="space-y-2">
-              {comments.map((comment) => (
-                <div
-                  key={comment.id}
-                  onClick={(e) => handleCommentShiftClick(e, comment.id, comment.text)}
-                  className="flex items-baseline justify-between gap-3 text-base sm:text-lg group"
-                >
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-editorial italic text-sm text-ink/50 dark:text-darkInk/50 flex-shrink-0 select-none">
-                      anonymous:
-                    </span>
-                    <span className="font-body text-ink dark:text-darkInk leading-snug">
-                      {comment.text}
-                    </span>
+      {/* Collapsible Anonymous Comments Drawer */}
+      {isCommentsOpen && (
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className="mt-6 pt-5 border-t border-ink/15 dark:border-darkInk/15 font-handwritten transition-all duration-300"
+        >
+          {/* Render comments if any exist */}
+          {comments && comments.length > 0 ? (
+            <div className="space-y-2.5 mb-5">
+              <div className="text-xs uppercase tracking-wider text-ink/40 dark:text-darkInk/40 select-none">
+                anonymous notes ({comments.length})
+              </div>
+              <div className="space-y-2">
+                {comments.map((comment) => (
+                  <div
+                    key={comment.id}
+                    onClick={(e) => handleCommentShiftClick(e, comment.id, comment.text)}
+                    className="flex items-baseline justify-between gap-3 text-base sm:text-lg group"
+                  >
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-editorial italic text-sm text-ink/50 dark:text-darkInk/50 flex-shrink-0 select-none">
+                        anonymous:
+                      </span>
+                      <span className="font-body text-ink dark:text-darkInk leading-snug break-words">
+                        {comment.text}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-ink/40 dark:text-darkInk/40 flex-shrink-0 select-none">
+                      <span>{comment.timestamp}</span>
+                      {isOwner && onDeleteComment && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`Delete comment "${comment.text}"?`)) {
+                              onDeleteComment(comment.id);
+                            }
+                          }}
+                          className="opacity-40 hover:opacity-100 hover:text-red-500 transition-opacity ml-1 cursor-pointer select-none text-[11px]"
+                          title="Delete this comment (Owner only)"
+                        >
+                          [x]
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-ink/40 dark:text-darkInk/40 flex-shrink-0 select-none">
-                    <span>{comment.timestamp}</span>
-                    {isOwner && onDeleteComment && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (window.confirm(`Delete comment "${comment.text}"?`)) {
-                            onDeleteComment(comment.id);
-                          }
-                        }}
-                        className="opacity-40 hover:opacity-100 hover:text-red-500 transition-opacity ml-1 cursor-pointer select-none text-[11px]"
-                        title="Delete this comment (Owner only)"
-                      >
-                        [x]
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-ink/40 dark:text-darkInk/40 text-sm mb-4 italic">
+              no notes inked yet. leave the first one below.
+            </p>
+          )}
 
-        {/* Minimal Hand-Drawn Single Input (No Name field, Submit on Enter or button) */}
-        <form onSubmit={handleCommentSubmit} className="mt-3 flex items-center gap-3">
-          <input
-            type="text"
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            placeholder="leave an anonymous note..."
-            className="flex-grow bg-transparent border-b border-ink/20 dark:border-darkInk/20 focus:border-ink dark:focus:border-darkInk outline-none font-handwritten text-base sm:text-lg text-ink dark:text-darkInk placeholder:text-ink/40 dark:placeholder:text-darkInk/40 py-1 transition-colors"
-          />
-          <button
-            type="submit"
-            className="naked-link scribble-hover font-handwritten text-base text-ink/70 dark:text-darkInk/70 hover:text-ink dark:hover:text-darkInk flex-shrink-0"
-            title="Leave anonymous note"
-          >
-            drop note →
-          </button>
-        </form>
-      </div>
+          {/* Minimal Hand-Drawn Single Input */}
+          <form onSubmit={handleCommentSubmit} className="mt-2 flex items-center gap-3">
+            <input
+              type="text"
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              placeholder="leave an anonymous note..."
+              className="flex-grow bg-transparent border-b border-ink/20 dark:border-darkInk/20 focus:border-ink dark:focus:border-darkInk outline-none font-handwritten text-base sm:text-lg text-ink dark:text-darkInk placeholder:text-ink/40 dark:placeholder:text-darkInk/40 py-1 transition-colors"
+              autoFocus
+            />
+            <button
+              type="submit"
+              className="naked-link scribble-hover font-handwritten text-base text-ink/70 dark:text-darkInk/70 hover:text-ink dark:hover:text-darkInk flex-shrink-0"
+              title="Leave anonymous note"
+            >
+              drop note →
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* Hand-drawn divider between thoughts */}
       <DoodleDivider className="mt-14 text-ink/20 dark:text-darkInk/20" />
