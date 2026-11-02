@@ -1,16 +1,28 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>THOUGHTS 'N' FEELINGS — MONUMENTUM DIGITALE</title>
-    <meta name="description" content="An ancient, hand-carved stone stele and epigraphic monument. Philosophical reflections on determinism, trophic existence, and raw conscious echoes inscribed upon continuous basalt." />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23e4e2dd'><path d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2z'/></svg>" />
+    <title>thoughts 'n' feelings — a hand-drawn sketchbook by absurdharsh</title>
+    <meta name="description" content="An expressive, 100% hand-drawn ink and paper sketchbook. Personal reflections on existence, consciousness, and quiet thoughts jotted down by absurdharsh." />
+    
+    <!-- Hand-Drawn Doodle Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='8'/><path d='M9 10h.01'/><path d='M15 10h.01'/><path d='M9.5 15a3.5 3.5 0 0 0 5 0'/></svg>" />
+    
+    <!-- Hand-Drawn Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700;800;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Gloria+Hallelujah&family=Instrument+Serif:ital@0;1&family=Patrick+Hand&family=Reenie+Beanie&display=swap" rel="stylesheet">
   </head>
-  <body class="bg-[#141516] text-[#d8d2c4] selection:bg-[#36373b] selection:text-[#ffffff] antialiased">
+  <body class="bg-white text-black antialiased selection:bg-black selection:text-white transition-colors duration-200">
+    <!-- SVG Squigglevision / Boil filter for organic hand-drawn linework -->
+    <svg class="sr-only" aria-hidden="true" style="position: absolute; width: 0; height: 0;">
+      <filter id="hand-drawn-filter" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.2" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+    </svg>
+
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

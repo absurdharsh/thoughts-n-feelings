@@ -1,149 +1,112 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { gsap } from 'gsap';
-import GreekMeanderDivider from './GreekMeanderDivider';
-import { sound } from '../utils/audio';
+import React, { useState } from 'react';
+import {
+  DoodleEye,
+  DoodleStar,
+  DoodleSpiral,
+  DoodleSpark,
+  DoodleArrowDown,
+  DoodleDivider
+} from './HandDrawnDoodles';
 
-export default function JournalEntryCard({ entry, index, isInitiallyOpen = true }) {
-  const [isOpen, setIsOpen] = useState(isInitiallyOpen);
+// Map doodle keys to authentic hand-drawn SVG components
+function renderDoodleIcon(doodleType) {
+  const commonClasses = "w-7 h-7 sm:w-8 sm:h-8 text-ink dark:text-darkInk opacity-80";
+  switch (doodleType) {
+    case 'star':
+      return <DoodleStar className={commonClasses} />;
+    case 'spiral':
+      return <DoodleSpiral className={commonClasses} />;
+    case 'eye':
+      return <DoodleEye className={commonClasses} />;
+    case 'spark':
+      return <DoodleSpark className={commonClasses} />;
+    case 'wind':
+    case 'arrow':
+    default:
+      return <DoodleArrowDown className={commonClasses} />;
+  }
+}
+
+export default function JournalEntryCard({ entry, index, total }) {
   const [copied, setCopied] = useState(false);
 
-  const contentRef = useRef(null);
-  const titleRef = useRef(null);
-
-  // GSAP slow stone unfolding
-  useEffect(() => {
-    if (!contentRef.current) return;
-
-    if (isOpen) {
-      gsap.to(contentRef.current, {
-        height: 'auto',
-        opacity: 1,
-        duration: 0.5,
-        ease: 'power2.out',
-      });
-    } else {
-      gsap.to(contentRef.current, {
-        height: 0,
-        opacity: 0,
-        duration: 0.4,
-        ease: 'power2.inOut',
-      });
-    }
-  }, [isOpen]);
-
-  const toggleFold = () => {
-    sound.playFold();
-    setIsOpen(!isOpen);
-  };
-
   const handleCopy = () => {
-    sound.playClick(1.4);
-    const textToCopy = `[ ${entry.title.toUpperCase()} ]\n${entry.epigraph ? `(${entry.epigraph})\n\n` : ''}${entry.content}\n\n— Inscribed by ${entry.author} [${entry.date}]`;
+    const textToCopy = `“${entry.title}”\n\n${entry.content}\n\n— ${entry.author} (${entry.date})`;
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2200);
+    setTimeout(() => setCopied(false), 2000);
   };
 
+  // Split multi-paragraph content cleanly
+  const paragraphs = entry.content.split('\n\n').filter(Boolean);
+
   return (
-    <article className="relative py-8 select-text">
-      {/* Epigraphic Heading Band (Directly on stone, no boxy card border) */}
-      <header 
-        onClick={toggleFold}
-        className="cursor-pointer select-none text-center pb-4"
-      >
-        {/* Roman Stratum Marker */}
-        <div className="flex items-center justify-center space-x-3 text-[10px] font-mono text-[#8c867a] tracking-[0.25em] uppercase mb-3">
-          <span>◈</span>
-          <span>{entry.chapterRoman || 'STELE'}</span>
-          <span>&bull;</span>
-          <span>{entry.date}</span>
-          <span>◈</span>
+    <article className="relative py-12 select-text first:pt-4">
+      {/* Top Entry Metadata: Number + Category + Margin Doodle */}
+      <div className="flex items-center justify-between pb-3">
+        <div className="flex items-baseline gap-3">
+          <span className="font-editorial italic text-3xl sm:text-4xl text-ink/40 dark:text-darkInk/40">
+            {entry.number || String(index + 1).padStart(2, '0')}.
+          </span>
+          <span className="font-handwritten text-base sm:text-lg uppercase tracking-wider text-ink/60 dark:text-darkInk/60">
+            {entry.type}
+          </span>
         </div>
 
-        {/* Chiseled Antique Title (Antique font applied strictly to titles) */}
-        <h3
-          ref={titleRef}
-          className="antique-subhead text-2xl sm:text-3xl font-bold tracking-[0.14em] uppercase text-[#e4e2dd] leading-snug hover:text-[#ffffff] transition-colors"
-        >
-          {entry.title}
-        </h3>
-
-        {/* Latin Epigraph */}
-        {entry.epigraph && (
-          <p className="mt-2 font-serif italic text-xs tracking-[0.2em] text-[#9c9679] uppercase">
-            — {entry.epigraph} —
-          </p>
-        )}
-
-        {/* Collapsed Snippet */}
-        {!isOpen && (
-          <p className="mt-3 font-serif text-[#8c867a] italic text-sm line-clamp-1 max-w-prose mx-auto">
-            “{entry.snippet}”
-          </p>
-        )}
-      </header>
-
-      {/* Unsealed Stele Body */}
-      <div ref={contentRef} className="overflow-hidden">
-        {/* Classical Reading Measure (60ch–65ch) with natural, uniform kerning from 1st character */}
-        <div className="py-6 max-w-prose mx-auto space-y-5 font-serif text-base sm:text-lg leading-[1.95] text-[#d8d2c4] carved-text text-left">
-          {entry.content.split('\n\n').map((para, i) => (
-            <p key={i} className="m-0 p-0 text-left tracking-normal font-normal">
-              {para}
-            </p>
-          ))}
-        </div>
-
-        {/* Carved Geometric Schematic / Architectural ASCII Diagram */}
-        {entry.asciiArt && (
-          <div className="my-8 max-w-xl mx-auto p-4 bg-[#1a1b1d] border-y border-[#36373b] stone-inset overflow-x-auto text-center">
-            <pre className="font-mono text-[10px] sm:text-[11px] text-[#8c867a] leading-tight select-none inline-block text-left">
-              {entry.asciiArt.trim()}
-            </pre>
-          </div>
-        )}
-
-        {/* Classical Attribution & Stone Tags (Zero emojis) */}
-        <div className="max-w-prose mx-auto pt-4 flex flex-wrap items-center justify-between gap-4 font-mono text-xs text-[#8c867a] border-t border-[#36373b]/40">
-          <div className="flex flex-wrap items-center gap-2">
-            {entry.tags && entry.tags.map((tag, tIdx) => (
-              <span
-                key={tIdx}
-                className="text-[10px] tracking-wider uppercase text-[#736f66]"
-              >
-                § {tag}
-              </span>
-            ))}
-          </div>
-
-          <div className="text-[11px] font-serif text-[#8c867a] italic">
-            Inscribed by <span className="font-mono text-[#d8d2c4] not-italic uppercase tracking-wider">{entry.author}</span>
-          </div>
-        </div>
-
-        {/* Recessed Archaeological Actions (No Likes, No Upvotes) */}
-        <div className="max-w-prose mx-auto mt-5 flex items-center justify-between pt-3">
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="stone-inlay-btn px-4 py-1.5 text-[11px]"
-            title="Transcribe inscription to clipboard"
-          >
-            <span>{copied ? '✓ TRANSCRIBED' : 'TRANSCRIBE INSCULPTURA ‡'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={toggleFold}
-            className="stone-inlay-btn px-3 py-1.5 text-[10px] text-[#8c867a]"
-          >
-            <span>{isOpen ? 'CONCEAL ▲' : 'REVEAL ▼'}</span>
-          </button>
+        {/* Playful margin doodle */}
+        <div className="transform hover:rotate-12 transition-transform duration-200">
+          {renderDoodleIcon(entry.doodle)}
         </div>
       </div>
 
-      {/* Greek Key Meander Divider Between Entries */}
-      <GreekMeanderDivider className="mt-8 mb-4" />
+      {/* Entry Title */}
+      <h2 className="font-editorial italic text-3xl sm:text-5xl text-ink dark:text-darkInk leading-tight mb-3">
+        {entry.title}
+      </h2>
+
+      {/* Author and Date Attribution */}
+      <div className="font-handwritten text-base sm:text-lg text-ink/70 dark:text-darkInk/70 mb-8 flex items-center gap-2">
+        <span>by {entry.author}</span>
+        <span>&bull;</span>
+        <span>{entry.date}</span>
+      </div>
+
+      {/* Body Paragraphs with Natural Kerning (Zero Drop-Cap Split Gap) */}
+      <div className="space-y-6 max-w-2xl">
+        {paragraphs.map((pText, pIdx) => {
+          // Check if paragraph is a quote (starts with quote marks)
+          const isQuote = pText.trim().startsWith('“') || pText.trim().startsWith('"');
+          return (
+            <p
+              key={pIdx}
+              className={`font-body text-xl sm:text-2xl leading-[1.85] text-ink dark:text-darkInk ${
+                isQuote ? 'font-editorial italic text-2xl sm:text-3xl text-ink/90 dark:text-darkInk/90 pl-3 border-l-2 border-ink/40 dark:border-darkInk/40' : ''
+              }`}
+            >
+              {pText}
+            </p>
+          );
+        })}
+      </div>
+
+      {/* Bottom Footer Actions */}
+      <div className="mt-8 pt-4 flex items-center justify-between font-handwritten text-base sm:text-lg">
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="naked-link scribble-hover text-ink/70 dark:text-darkInk/70 hover:text-ink dark:hover:text-darkInk"
+          title="Copy this entry to clipboard"
+        >
+          {copied ? '✓ copied to clipboard!' : 'copy thought'}
+        </button>
+
+        <span className="text-ink/40 dark:text-darkInk/40">
+          folio {index + 1} of {total}
+        </span>
+      </div>
+
+      {/* Hand-drawn divider between thoughts */}
+      <DoodleDivider className="mt-14 text-ink/20 dark:text-darkInk/20" />
     </article>
   );
 }

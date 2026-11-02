@@ -1,203 +1,95 @@
 // ==========================================================================
-// ARCHAEOLOGICAL CORPUS — The Carved Inscriptions
-// Solitary reflections from absurdharsh, Ishika, and Clare Harner
-// chiseled into a continuous monolithic basalt stele.
-// Zero documentation, zero technical setup copy, zero emojis.
+// SKETCHBOOK ENTRIES — Raw Thoughts & Feelings
+// Hand-drawn editorial archive with zero ASCII art, zero Latin clutter,
+// and pure human reflections from absurdharsh, Ishika, and Clare Harner.
 // ==========================================================================
 
 export const INITIAL_ENTRIES = [
   {
-    id: "stele-001",
-    chapter: "LIBER I: DE FATI ET CULPAE PARADOXO",
-    chapterRoman: "LIBER I",
-    type: "thought",
-    title: "The Divine Pre-destination Paradox",
-    epigraph: "DE PRAEDESTINATIONE ET LIBERO ARBITRIO",
-    author: "absurdharsh",
-    date: "ANNO MMXXVI",
-    timestamp: "HORA NOCTURNA",
-    tags: ["Determinism", "Divine Decree", "Moral Culpability", "Cosmic Order"],
-    snippet: "we hear that it is already decided by God, how we will live, die, and spend our days...",
-    content: `we hear that it is already decided by God, how we will live, die, and spend our days.
+    id: 'entry-01',
+    number: '01',
+    type: 'thought',
+    title: 'The Divine Pre-destination Paradox',
+    author: 'absurdharsh',
+    date: 'Autumn 2026',
+    doodle: 'star',
+    content: `We hear that it is already decided by God, how we will live, die, and spend our days.
 
 In fact so much so that, not even a leaf can fall without God's will.
 
-So why must i be prosecuted for my sins?
+So why must I be prosecuted for my sins?
 
-If every synaptic impulse was chiseled into the basalt ledger before the first star ignited, then every blunder, every trespass, and every broken silence was already choreographed into the celestial script. Either the Architect claims the tragedy, or the actors were summoned to a trial that was decided before Genesis.`,
-    asciiArt: `
-  ╔════════════════════════════════════════════════╗
-  ║  FIG. I: SCHEMA DECRETI DIVINI                 ║
-  ║                                                ║
-  ║                  ┌───┐                         ║
-  ║                 │ O │    [ VOLUNTAS DEI ]      ║
-  ║                  └───┘   The Prime Mover       ║
-  ║                    │                           ║
-  ║         ┌──────────┴──────────┐                ║
-  ║         ▼                     ▼                ║
-  ║     [ FOLIUM ]            [ ACTIO ]            ║
-  ║   "Nec folium cadit      "Cur igitur peccata   ║
-  ║    sine voluntate"        puniuntur?"          ║
-  ╚════════════════════════════════════════════════╝
-    `
+If every synaptic impulse was inscribed onto the cosmic ledger before the first star ignited, then every blunder, every trespass, and every broken silence was already choreographed into the celestial script. Either the Architect claims the tragedy, or the actors were summoned to a trial that was decided before Genesis.`
   },
   {
-    id: "stele-002",
-    chapter: "LIBER II: CATENA CONSUMPTIONIS",
-    chapterRoman: "LIBER II",
-    type: "thought",
+    id: 'entry-02',
+    number: '02',
+    type: 'thought',
     title: "Ishika's Theorem on Value & Consumption",
-    epigraph: "DE TROPHICA CONSUMPTIONE AC VALORE",
-    author: "ishika (inscribed by absurdharsh)",
-    date: "ANNO MMXXVI",
-    timestamp: "HORA VESPERTINA",
-    tags: ["Ishika's Theorem", "Trophic Hierarchy", "Metaphysics", "Conversion"],
-    snippet: "Eating is not bad, as animals we eat and eat and give value to each other...",
+    author: 'ishika',
+    date: 'Autumn 2026',
+    doodle: 'spiral',
     content: `Eating is not bad, as animals we eat and eat and give value to each other.
 
 Plants get their value from being eaten by an animal, and an animal gets their value by being eaten by us, and we eaten by God.
 
-(the thought above was from ishika a friend.)
+(The thought above was from Ishika, a friend.)
 
-Perhaps purpose is not discovered in eternal preservation, but in being metabolized into higher consciousness. When an organism is consumed, its energy does not evaporate—it transmutes into another's pulse. If we are eaten by God, then our quiet griefs, our small laughter, and our midnight inscriptions are simply nourishment for the infinite void that sustains the universe.`,
-    asciiArt: `
-  ╔════════════════════════════════════════════════╗
-  ║  FIG. II: PYRAMIS CONSUMPTIONIS                ║
-  ║                                                ║
-  ║                   /\                           ║
-  ║                  /  \     [ DEUS / THE WHOLE ] ║
-  ║                 /====\    The Consuming Void   ║
-  ║                /HOMINES\                       ║
-  ║               /==========\                     ║
-  ║              /  ANIMALIA  \                    ║
-  ║             /==============\                   ║
-  ║            /    PLANTAE     \                  ║
-  ║           /──────────────────\                 ║
-  ║           VALOR PER CONSUMPTIONEM DATUR        ║
-  ╚════════════════════════════════════════════════╝
-    `
+Perhaps purpose is not discovered in eternal preservation, but in being metabolized into higher consciousness. When an organism is consumed, its energy does not evaporate—it transmutes into another's pulse. If we are eaten by God, then our quiet griefs, our small laughter, and our midnight scribbles are simply nourishment for the infinite void that sustains the universe.`
   },
   {
-    id: "stele-003",
-    chapter: "LIBER III: TABULA VACUA",
-    chapterRoman: "LIBER III",
-    type: "feeling",
-    title: "Cognitive Surplus vs. Quiet Stone",
-    epigraph: "DE MENTE CONTRA SENTIENTIAM",
-    author: "absurdharsh",
-    date: "ANNO MMXXVI",
-    timestamp: "HORA INTEMPESTA",
-    tags: ["Silence", "Unorthodox Reflections", "Solitary Record", "Stillness"],
-    snippet: "i think more than i feel so don't be so, don't expect frequent updates here lowk...",
-    content: `i think more than i feel so don't be so, don't expect frequent updates here lowk.
+    id: 'entry-03',
+    number: '03',
+    type: 'feeling',
+    title: 'Cognitive Surplus vs. Emotional Quiet',
+    author: 'absurdharsh',
+    date: 'Late Night',
+    doodle: 'eye',
+    content: `I think more than I feel, so don't expect frequent updates here lowk.
 
-this will be again very unorthodox way of making a 'blog' i suppose cause i will be writing what i wanna write lowk.
+This will be again a very unorthodox way of making a 'blog' I suppose, because I'll just be writing what I want to write lowk—mostly what I feel, how I feel, and what makes me feel.
 
-but mostly what i feel, how i feel, and what makes me feel.
-
-Most write to perform or to petition an audience for validation. This monument is merely a memory dump chiseled before the slate is wiped smooth. If I feel like hollow basalt today, that is what remains inscribed. The silence between the chisel strikes is heavier than the words anyway.`,
-    asciiArt: `
-  ╔════════════════════════════════════════════════╗
-  ║  FIG. III: RATIO SILENTII                      ║
-  ║                                                ║
-  ║  ┌──────────────────────────────────────────┐  ║
-  ║  │ COGITATIO (THOUGHTS) : [████████████░░]  │  ║
-  ║  │ SENTIENTIA (FEELINGS): [████░░░░░░░░░░]  │  ║
-  ║  │ SILENTIUM (STILLNESS): [██████████████]  │  ║
-  ║  └──────────────────────────────────────────┘  ║
-  ║         "The quiet between keystrokes"         ║
-  ╚════════════════════════════════════════════════╝
-    `
+Most people write to perform or to petition an audience for validation. This sketchbook is merely a memory dump jotted down before the RAM resets. If I feel like quiet nothing today, that is what gets inked onto the paper. The silence between the strokes is louder than the words anyway.`
   },
   {
-    id: "stele-004",
-    chapter: "LIBER IV: MONUMENTA ET CINERES",
-    chapterRoman: "LIBER IV",
-    type: "quote",
-    title: "Watch Me As I Come To Life",
-    epigraph: "EPITAPHIUM MEMORIAE",
-    author: "absurdharsh",
-    date: "ANNO MMXXVI",
-    timestamp: "MEDIO NOCTIS",
-    tags: ["Epitaph", "Remembrance", "Stone", "Mortality"],
-    snippet: "watch me as i come to life when someone takes your name on my grave...",
-    content: `“watch me as i come to life when someone takes your name on my grave.”
+    id: 'entry-04',
+    number: '04',
+    type: 'quote',
+    title: 'Watch Me As I Come To Life',
+    author: 'absurdharsh',
+    date: 'Midnight',
+    doodle: 'spark',
+    content: `“Watch me as I come to life when someone takes your name on my grave.”
 
-Death is merely the loss of living reference. As long as someone utters your name in the presence of my dust, the ancient voltage between our memories will arc across the abyss. Even cold slate retains the heat of the summer sun long after twilight has surrendered to the night.`,
-    asciiArt: `
-  ╔════════════════════════════════════════════════╗
-  ║  FIG. IV: SCHEMA SEPULCRI                      ║
-  ║                                                ║
-  ║                    .---.                       ║
-  ║                   /     \                      ║
-  ║                  |  RIP  |    [ EPITAPHIUM ]   ║
-  ║                  |       |    Memoria Aeterna  ║
-  ║               ---|-------|---                  ║
-  ║             "NOMEN TUUM SUPER SAXUM"           ║
-  ╚════════════════════════════════════════════════╝
-    `
+Death is merely the loss of living reference. As long as someone utters your name in the presence of my dust, the ancient voltage between our memories will arc across the abyss. Even cold paper retains the indentation of a pen pressed too hard long after the ink has dried.`
   },
   {
-    id: "stele-005",
-    chapter: "LIBER IV: MONUMENTA ET CINERES",
-    chapterRoman: "LIBER IV",
-    type: "quote",
-    title: "Immortal Presence in the Wind",
-    epigraph: "VERBA CLARE HARNER (1934)",
-    author: "clare harner",
-    date: "ANNO MCMXXXIV",
-    timestamp: "AETERNITAS",
-    tags: ["Clare Harner", "Poetry", "Grave", "Wind"],
-    snippet: "do not stand by my grave, and cry. i am not there, i did not die...",
-    content: `“do not stand by my grave, and cry.
-i am not there, i did not die.”
+    id: 'entry-05',
+    number: '05',
+    type: 'quote',
+    title: 'Immortal Presence in the Wind',
+    author: 'clare harner',
+    date: '1934',
+    doodle: 'wind',
+    content: `“Do not stand by my grave, and cry.
+I am not there, I did not die.”
 
 — Clare Harner (Immortality, 1934)
 
-I am a thousand winds that blow. I am the diamond glints on snow. I am the sunlight on ripened grain. I am the gentle autumn rain. When you awaken in the morning's hush, I am the swift uplifting rush of quiet birds in circled flight. I am the soft stars that shine at night.`,
-    asciiArt: `
-  ╔════════════════════════════════════════════════╗
-  ║  FIG. V: FLATUS AETERNUS                       ║
-  ║                                                ║
-  ║             ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~              ║
-  ║              \   \   \   \   \                 ║
-  ║             ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~              ║
-  ║              "NON OMNIS MORIAR"                ║
-  ╚════════════════════════════════════════════════╝
-    `
+I am a thousand winds that blow. I am the diamond glints on snow. I am the sunlight on ripened grain. I am the gentle autumn rain. When you awaken in the morning's hush, I am the swift uplifting rush of quiet birds in circled flight. I am the soft stars that shine at night.`
   },
   {
-    id: "stele-006",
-    chapter: "LIBER V: DE DESIDERIO ET UMBRA",
-    chapterRoman: "LIBER V",
-    type: "quote",
-    title: "On Desire and Solitary Shadows",
-    epigraph: "DE CUPIDITATE ET SOLITUDINE",
-    author: "absurdharsh",
-    date: "ANNO MMXXVI",
-    timestamp: "CREPUSCULUM",
-    tags: ["Desire", "Contentment", "Shadows", "Darkness"],
-    snippet: "fall in love with what you have, not with what you want...",
-    content: `“fall in love with what you have, not with what you want.”
+    id: 'entry-06',
+    number: '06',
+    type: 'thought',
+    title: 'On Contentment and Shadow',
+    author: 'absurdharsh',
+    date: 'Dusk',
+    doodle: 'arrow',
+    content: `“Fall in love with what you have, not with what you want.”
 
-“even your shadow leaves you, when you're in amidst darkness.”
+“Even your shadow leaves you, when you're in amidst darkness.”
 
-Desire is the constant longing for what is absent, blinding the eye to the stone beneath one's feet. When darkness deepens and all external reflections vanish, only the core remains. When there is a will, the path carves itself into the rock.`,
-    asciiArt: `
-  ╔════════════════════════════════════════════════╗
-  ║  FIG. VI: SCHEMA UMBRAE ET LUCIS               ║
-  ║                                                ║
-  ║                 ☼  [ LUX EXTERNA ]             ║
-  ║                 │                              ║
-  ║                 ▼                              ║
-  ║             ┌───────┐                          ║
-  ║             │ CORPUS│ ───► [ UMBRA ]           ║
-  ║             └───────┘      Shadow departs      ║
-  ║                 │          in the dark         ║
-  ║                 ▼                              ║
-  ║           [ NOX PROFUNDA ]                     ║
-  ║         "Amor fati & veritas"                  ║
-  ╚════════════════════════════════════════════════╝
-    `
+Desire is the constant longing for what is absent, blinding the eye to the ink on the page right in front of you. When darkness deepens and all external reflections vanish, only the core remains. When there is a will, the path draws itself.`
   }
 ];

@@ -6,137 +6,114 @@
   html, body {
     margin: 0;
     padding: 0;
-    background-color: #141516;
-    color: #d8d2c4;
-    font-family: 'EB Garamond', Garamond, Georgia, serif;
+    background-color: #FFFFFF;
+    color: #000000;
+    font-family: 'Patrick Hand', cursive;
     overflow-x: hidden;
-    letter-spacing: 0.015em;
+    letter-spacing: 0.02em;
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* Ancient Stone Scrollbar */
+  .dark html, .dark body, html.dark, body.dark {
+    background-color: #000000 !important;
+    color: #FFFFFF !important;
+  }
+
+  /* Natural, uniform kerning with zero drop-cap separation */
+  p {
+    margin: 0;
+    padding: 0;
+    font-family: 'Patrick Hand', cursive;
+    letter-spacing: normal;
+    word-spacing: normal;
+    text-indent: 0;
+  }
+
+  /* Minimal custom ink scrollbar */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
   }
 
   ::-webkit-scrollbar-track {
-    background: #141516;
-    border-left: 1px solid #222325;
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #2b2c30;
-    border-radius: 0px;
-    border: 1px solid #3b3c42;
+    background: #000000;
   }
 
-  ::-webkit-scrollbar-thumb:hover {
-    background: #4a4b52;
+  .dark ::-webkit-scrollbar-thumb {
+    background: #FFFFFF;
   }
 }
 
-/* Inscription Selection */
+/* Binary High Contrast Selection */
 ::selection {
-  background: rgba(156, 150, 121, 0.35);
-  color: #ffffff;
+  background: #000000;
+  color: #FFFFFF;
 }
 
-/* ==========================================================================
-   ANTIQUE SPECIMEN CHISELED TYPOGRAPHY (18935121.jpg)
-   Bone-white limestone top facet (#e4e2dd), muted olive-stone lower bevel (#9c9679),
-   and deep bronze-earth drop-relief outline (#6a6344).
-   ========================================================================== */
-.antique-title {
-  font-family: 'Antique', 'Cinzel Decorative', 'Cinzel', serif;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  background: linear-gradient(180deg, #f7f5f0 0%, #e4e2dd 48%, #9c9679 52%, #6a6344 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: 
-    drop-shadow(0 1px 0 #4a452d) 
-    drop-shadow(0 2px 0 #2a2719) 
-    drop-shadow(0 5px 8px rgba(0, 0, 0, 0.95));
+.dark ::selection {
+  background: #FFFFFF;
+  color: #000000;
 }
 
-.antique-subhead {
-  font-family: 'Antique', 'Cinzel', serif;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  background: linear-gradient(180deg, #e4e2dd 0%, #c4c1b6 50%, #8c867a 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 1px 0 #222325);
+/* Hand-Drawn Wobbly Filter Utility */
+.hand-drawn-line {
+  filter: url(#hand-drawn-filter);
 }
 
-/* Carved & Debossed Stone Inscriptions */
-.carved-text {
-  text-shadow: -1px -1px 0 rgba(0, 0, 0, 0.95), 1px 1px 0 rgba(255, 255, 255, 0.08);
+/* Wobbly Torn Paper Border */
+.wobbly-paper-border {
+  border: 2px solid #000000;
+  filter: url(#hand-drawn-filter);
 }
 
-.carved-text-deep {
-  text-shadow: -2px -2px 0 rgba(0, 0, 0, 0.98), 1px 1px 0 rgba(255, 255, 255, 0.12);
+.dark .wobbly-paper-border {
+  border: 2px solid #FFFFFF;
 }
 
-/* Continuous Monolithic Stone Stele (Rough chipped slate) */
-.monolith-stele {
-  background-color: #222325;
-  border-left: 2px solid #36373b;
-  border-right: 2px solid #2a2b2f;
-  box-shadow: 
-    inset 1px 1px 0 rgba(255, 255, 255, 0.06),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.92),
-    0 40px 100px -20px rgba(0, 0, 0, 0.98);
+/* Hand-Drawn Scribble Hover Underline */
+.scribble-hover {
   position: relative;
-}
-
-/* Subtle organic stone pitting/grain */
-.stele-pitting {
-  background-image: 
-    radial-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 0),
-    radial-gradient(rgba(0, 0, 0, 0.28) 1px, transparent 0);
-  background-size: 14px 14px, 28px 28px;
-}
-
-/* Recessed Stone Inlays (Buttons & Controls) */
-.stone-inlay-btn {
-  background-color: #1a1b1d;
-  border: 1px solid #36373b;
-  color: #d8d2c4;
-  font-family: 'IBM Plex Mono', 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  border-radius: 0px;
-  box-shadow: 
-    inset 1px 1px 0 rgba(255, 255, 255, 0.05),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.8),
-    0 2px 4px rgba(0, 0, 0, 0.8);
-  transition: all 0.15s ease-out;
+  display: inline-block;
   cursor: pointer;
+}
+
+.scribble-hover::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 100%;
+  height: 2px;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  filter: url(#hand-drawn-filter);
+}
+
+.scribble-hover:hover::after {
+  transform: scaleX(1);
+}
+
+/* Naked Clickable Item (No Rectangular Pill Buttons) */
+.naked-link {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   user-select: none;
+  transition: opacity 0.2s ease, transform 0.15s ease;
 }
 
-.stone-inlay-btn:hover {
-  background-color: #26272b;
-  border-color: #4a4c54;
-  color: #ffffff;
+.naked-link:hover {
+  transform: translateY(-1px);
 }
 
-.stone-inlay-btn:active {
+.naked-link:active {
   transform: translateY(1px);
-  box-shadow: 
-    inset -1px -1px 0 rgba(255, 255, 255, 0.03),
-    inset 1px 1px 0 rgba(0, 0, 0, 0.95),
-    0 1px 1px rgba(0, 0, 0, 0.9);
-  background-color: #141517;
-}
-
-/* Chiseled Inset Troughs */
-.stone-inset {
-  background-color: #17181a;
-  border: 1px solid #28292d;
-  box-shadow: 
-    inset 0 3px 8px rgba(0, 0, 0, 0.9),
-    inset 0 0 1px rgba(0, 0, 0, 0.95);
 }

@@ -15,14 +15,14 @@ export default function SmoothScrollProvider({ children }) {
     // 1. Register GSAP ScrollTrigger
     gsap.registerPlugin(ScrollTrigger);
 
-    // 2. Configure Lenis with heavy stone physics (massive monolithic inertia)
+    // 2. Configure Lenis with airy, smooth sketchbook gliding physics
     const lenis = new Lenis({
-      lerp: 0.055,          // Heavy, weighted stone deceleration
+      lerp: 0.08,           // Airy, fluid deceleration for hand-drawn paper feel
       orientation: 'vertical',
       gestureOrientation: 'vertical',
       smoothWheel: true,
-      wheelMultiplier: 0.8, // Deliberate, physical wheel resistance
-      touchMultiplier: 1.1,
+      wheelMultiplier: 1.0,
+      touchMultiplier: 1.2,
       infinite: false,
     });
 

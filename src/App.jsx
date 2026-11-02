@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import SmoothScrollProvider from './components/SmoothScrollProvider';
-import VantaAsciiBackground from './components/VantaAsciiBackground';
-import CrtOverlay from './components/CrtOverlay';
-import AsciiHeroBanner from './components/AsciiHeroBanner';
+import HandDrawnHero from './components/HandDrawnHero';
 import DigitalBookLayout from './components/DigitalBookLayout';
 import RetroStatusBar from './components/RetroStatusBar';
-import InteractiveTerminalLog from './components/InteractiveTerminalLog';
-import GreekMeanderDivider from './components/GreekMeanderDivider';
+import HandDrawnThoughtModal from './components/HandDrawnThoughtModal';
 import { INITIAL_ENTRIES } from './data/initialThoughts';
-import { sound } from './utils/audio';
 
 export default function App() {
+  // Binary Theme: Light mode (Paper #FFFFFF, Ink #000000) by default
+  const [isDark, setIsDark] = useState(() => {
+    try {
+      return localStorage.getItem('sketchbook_theme') === 'dark';
+    } catch {
+      return false;
+    }
+  });
+
   const [entries, setEntries] = useState(() => {
     try {
-      const saved = localStorage.getItem('thoughts_entries_monument_clean');
+      const saved = localStorage.getItem('thoughts_sketchbook_entries_v2');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -22,24 +27,30 @@ export default function App() {
     return INITIAL_ENTRIES;
   });
 
-  const [soundEnabled, setSoundEnabled] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Sync to local storage
+  // Sync theme with HTML root class
   useEffect(() => {
     try {
-      localStorage.setItem('thoughts_entries_monument_clean', JSON.stringify(entries));
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('sketchbook_theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('sketchbook_theme', 'light');
+      }
+    } catch {}
+  }, [isDark]);
+
+  // Sync entries to local storage
+  useEffect(() => {
+    try {
+      localStorage.setItem('thoughts_sketchbook_entries_v2', JSON.stringify(entries));
     } catch {}
   }, [entries]);
 
-  const handleToggleSound = () => {
-    const nextState = !soundEnabled;
-    setSoundEnabled(nextState);
-    sound.setMuted(!nextState);
-    sound.toggleAmbient(nextState);
-    if (nextState) {
-      sound.playClick(1.0);
-    }
+  const handleToggleTheme = () => {
+    setIsDark((prev) => !prev);
   };
 
   const handleSaveEntry = (newEntry) => {
@@ -55,83 +66,53 @@ export default function App() {
 
   return (
     <SmoothScrollProvider>
-      <div className="relative min-h-screen text-[#d8d2c4] bg-[#141516] selection:bg-[#36373b] selection:text-[#ffffff]">
-        {/* Subterranean Atmosphere: Ultra-slow matte charcoal & settling dust motes */}
-        <VantaAsciiBackground />
+      <div className="relative min-h-screen bg-paper dark:bg-darkPaper text-ink dark:text-darkInk transition-colors duration-200 selection:bg-ink selection:text-paper dark:selection:bg-darkInk dark:selection:text-darkPaper flex flex-col justify-between">
+        
+        {/* Main Sketchbook Body */}
+        <main className="w-full flex-grow">
+          {/* Graciano & Dribbble Inspired Hand-Drawn Hero */}
+          <HandDrawnHero
+            isDark={isDark}
+            onToggleTheme={handleToggleTheme}
+            onOpenNewEntryModal={() => setIsModalOpen(true)}
+            onScrollToLedger={handleScrollToLedger}
+          />
 
-        {/* Microscopic Stone Pitting & Chamber Shadow */}
-        <CrtOverlay enabled={true} />
+          {/* Continuous Editorial Journal Stream */}
+          <DigitalBookLayout
+            entries={entries}
+            onOpenNewEntryModal={() => setIsModalOpen(true)}
+          />
 
-        {/* Single Monolithic Stone Stele (No Boxy Cards or Grid Containers) */}
-        <div className="relative z-10 flex flex-col items-center min-h-screen px-3 sm:px-6 py-8 sm:py-16">
-          <main className="w-full max-w-4xl monolith-stele stele-pitting my-4">
-            
-            {/* Monument Summit & Hero Architrave */}
-            <AsciiHeroBanner
-              onInscribeClick={() => setIsModalOpen(true)}
-              onScrollToLedger={handleScrollToLedger}
-              soundEnabled={soundEnabled}
-              onToggleSound={handleToggleSound}
-            />
+          {/* Hand-Drawn Scroll Back To Top */}
+          <RetroStatusBar />
+        </main>
 
-            {/* Continuous Inscription Folios */}
-            <DigitalBookLayout
-              entries={entries}
-              onOpenNewEntryModal={() => setIsModalOpen(true)}
-            />
+        {/* Minimal Editorial Footer */}
+        <footer className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-12 border-t border-ink/20 dark:border-darkInk/20 font-handwritten text-base sm:text-lg text-center text-ink/70 dark:text-darkInk/70">
+          <p className="flex flex-wrap items-center justify-center gap-2">
+            <span>thoughts 'n' feelings</span>
+            <span className="opacity-40">&bull;</span>
+            <span>an ink and paper sketchbook by</span>
+            <a
+              href="https://www.instagram.com/absurdnigga"
+              target="_blank"
+              rel="noreferrer"
+              className="scribble-hover font-editorial italic underline decoration-1 underline-offset-4 text-ink dark:text-darkInk font-bold"
+            >
+              absurdharsh
+            </a>
+          </p>
+          <p className="mt-2 text-sm opacity-50">
+            pure binary ink on paper &bull; zero noise &bull; crafted with organic linework
+          </p>
+        </footer>
 
-            {/* Inlaid Stele Controls */}
-            <RetroStatusBar
-              soundEnabled={soundEnabled}
-              onToggleSound={handleToggleSound}
-              onOpenNewEntryModal={() => setIsModalOpen(true)}
-            />
-
-            {/* Authentic Greek Key Meander Divider */}
-            <GreekMeanderDivider className="my-8" />
-
-            {/* Monument Base / Epigraphic Colophon (Grounded, Solitary, Zero Emojis, Zero Documentation) */}
-            <footer className="px-6 py-12 text-center font-mono text-xs text-[#8c867a]">
-              <div className="max-w-2xl mx-auto space-y-4">
-                <div className="flex flex-wrap items-center justify-center gap-4 text-[10px] tracking-[0.25em] uppercase text-[#736f66]">
-                  <a
-                    href="https://www.instagram.com/absurdnigga"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-[#d8d2c4] transition-colors"
-                  >
-                    ‡ ABSURDHARSH
-                  </a>
-                  <span>&bull;</span>
-                  <span>ISHIKA'S THEOREM</span>
-                  <span>&bull;</span>
-                  <span>CLARE HARNER (MCMXXXIV)</span>
-                </div>
-
-                <div className="py-2 text-[10px] text-[#5a5852] leading-relaxed">
-                  <pre className="font-mono inline-block text-left opacity-75">
-{`╔════════════════════════════════════════════════════════════════╗
-║ MONUMENTUM DIGITALE &bull; EX ARCHIVO ABSURDHARSH                  ║
-║ "i think more than i feel, so don't expect frequent updates"   ║
-║ AETERNITAS &bull; SILENTIUM &bull; MEMORIA                               ║
-╚════════════════════════════════════════════════════════════════╝`}
-                  </pre>
-                </div>
-
-                <p className="font-serif italic text-xs text-[#736f66] tracking-wider uppercase">
-                  Non omnis moriar &bull; Not all of me shall die &bull; Inscribed upon permanent basalt
-                </p>
-              </div>
-            </footer>
-          </main>
-        </div>
-
-        {/* Modal: Chisel Inscription into Stele */}
-        <InteractiveTerminalLog
+        {/* Hand-Drawn Thought Inscription Modal */}
+        <HandDrawnThoughtModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSaveEntry={handleSaveEntry}
-          entries={entries}
         />
       </div>
     </SmoothScrollProvider>

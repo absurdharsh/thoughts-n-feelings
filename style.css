@@ -1,27 +1,22 @@
 /* ==========================================================================
-   THOUGHTS 'N' FEELINGS — MONUMENTUM DIGITALE
-   Classical Stone Stele & Antique Epigraphic Typography
+   THOUGHTS 'N' FEELINGS — HAND-DRAWN SKETCHBOOK
+   Binary ink on paper aesthetic inspired by gracianoillustration.webflow.io
    ========================================================================== */
 
 :root {
-  --antique-slate: #222325;
-  --antique-basalt: #141516;
-  --antique-limestone: #e4e2dd;
-  --antique-olive: #9c9679;
-  --antique-bronze: #6a6344;
-  --antique-chalk: #d8d2c4;
-  --antique-ash: #8c867a;
+  --bg-color: #FFFFFF;
+  --ink-color: #000000;
 }
 
-@font-face {
-  font-family: 'Antique';
-  src: local('Cinzel Decorative'), local('Cinzel'), serif;
-  font-weight: 700 900;
-  font-display: swap;
+.dark {
+  --bg-color: #000000;
+  --ink-color: #FFFFFF;
 }
 
-html, body {
-  background-color: var(--antique-basalt);
-  color: var(--antique-chalk);
-  font-family: 'EB Garamond', Garamond, Georgia, serif;
+body {
+  background-color: var(--bg-color);
+  color: var(--ink-color);
+  font-family: 'Patrick Hand', cursive;
+  margin: 0;
+  padding: 0;
 }
