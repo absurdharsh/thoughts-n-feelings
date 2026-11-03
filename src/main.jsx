@@ -4,7 +4,7 @@ import App from './App.jsx'
 import './index.css'
 import { inject } from '@vercel/analytics'
 
-inject()
+inject({ mode: 'production' })
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
