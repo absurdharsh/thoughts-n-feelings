@@ -136,7 +136,7 @@ export default function ScribblePreloader({ isDark, onComplete }) {
       <div className="w-full max-w-4xl mx-auto flex items-center justify-between font-handwritten text-sm sm:text-base border-b border-ink/15 dark:border-darkInk/20 pb-4">
         <div className="flex items-center gap-2">
           <span className="font-editorial italic text-lg sm:text-xl">vol. 01</span>
-          <span className="opacity-40">&middot;</span>
+          <span className="opacity-40">·</span>
           <span className="opacity-75">ink on paper</span>
         </div>
 
