@@ -21,7 +21,7 @@ export default function HandDrawnHero({
       <nav className="flex items-center justify-between font-handwritten text-base sm:text-lg pb-6 border-b border-ink/20 dark:border-darkInk/20">
         <div className="flex items-center gap-2">
           <span className="font-editorial italic text-xl">vol. 01</span>
-          <span className="opacity-40">&bull;</span>
+          <span className="opacity-40">&middot;</span>
           <span className="opacity-70">ink on paper</span>
         </div>
 

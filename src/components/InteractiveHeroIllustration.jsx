@@ -158,7 +158,7 @@ export default function InteractiveHeroIllustration({ isDark }) {
           specimen 01:
         </span>
         <span>two in embrace</span>
-        <span className="opacity-40">&bull;</span>
+        <span className="opacity-40">&middot;</span>
         <span className="opacity-80 italic">{caption}</span>
       </div>
     </div>

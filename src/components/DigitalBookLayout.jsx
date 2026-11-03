@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import JournalEntryCard from './JournalEntryCard';
-import { DoodleCircle } from './HandDrawnDoodles';
+import { DoodleUnderline } from './HandDrawnDoodles';
 import { getCommentsForEntry } from '../utils/commentUtils';
 
 export default function DigitalBookLayout({
@@ -140,11 +140,11 @@ export default function DigitalBookLayout({
                   {cat.label} ({count})
                 </span>
 
-                {/* Hand-Drawn Wobbly Circle around active link */}
+                {/* Tasteful Hand-Drawn Ink Underline below active link (never clashes with text) */}
                 {isActive && (
-                  <div className="absolute -inset-x-2 -inset-y-1 pointer-events-none opacity-90 text-ink dark:text-darkInk">
-                    <DoodleCircle className="w-full h-full" />
-                  </div>
+                  <span className="absolute -bottom-1.5 left-0 right-0 h-2 pointer-events-none text-ink dark:text-darkInk transition-opacity duration-200">
+                    <DoodleUnderline className="w-full h-full" />
+                  </span>
                 )}
               </button>
             );

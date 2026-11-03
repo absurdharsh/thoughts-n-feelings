@@ -94,8 +94,8 @@ export function DoodleSpark({ className = 'w-6 h-6' }) {
 
 export function DoodleUnderline({ className = 'w-full h-3' }) {
   return (
-    <svg viewBox="0 0 200 12" preserveAspectRatio="none" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" className={`hand-drawn-line ${className}`}>
-      <path d="M 3 8 Q 50 3, 100 8 T 197 6" />
+    <svg viewBox="0 0 200 12" preserveAspectRatio="none" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" className={`hand-drawn-line ${className}`}>
+      <path d="M 2 8 C 45 4, 95 10, 145 6 C 170 4, 188 7, 198 6" />
     </svg>
   );
 }
