@@ -3,27 +3,23 @@
 // ==========================================================================
 
 import {
-  SHARED_DB_URL,
-  fetchCloudState,
-  saveCloudState,
-  syncWithCloud,
+  API_STORE_URL,
+  fetchStore,
+  saveLocalState,
   normalizeState
 } from '../db';
 
-export { SHARED_DB_URL };
+export const SHARED_DB_URL = API_STORE_URL;
 
 export function normalizeCloudData(json) {
   return normalizeState(json);
 }
 
 export async function fetchCloudData() {
-  return fetchCloudState();
+  return fetchStore();
 }
 
 export async function saveCloudData(state) {
-  return saveCloudState(state);
-}
-
-export async function mutateCloudData(mutatorFn) {
-  return syncWithCloud(mutatorFn);
+  saveLocalState(state);
+  return true;
 }

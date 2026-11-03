@@ -1,16 +1,12 @@
 // ==========================================================================
-// Thoughts 'n' Feelings — Unified Cloud & Local Database Store
-// Live CORS-enabled persistent store with atomic Fetch-Modify-Save cycle
+// Thoughts 'n' Feelings — Client Data Layer for /api/store
+// Secure Vercel Serverless integration with local cache fallback
 // ==========================================================================
 
-export const SHARED_DB_URL =
-  (typeof window !== 'undefined' && (window.SHARED_DB_URL || window.localStorage?.getItem('TF_SHARED_DB_URL'))) ||
-  'https://extendsclass.com/api/json-storage/bin/ecfaffc';
-
+export const API_STORE_URL = '/api/store';
 export const LOCAL_STORAGE_KEY = 'tf_shared_state_v2';
 
-// Clean empty schema template
-export function createEmptyState() {
+export function defaultState() {
   return {
     thoughts: [],
     comments: {},
@@ -19,80 +15,63 @@ export function createEmptyState() {
   };
 }
 
-// Normalizes any raw cloud/local data into the standard strict schema
-// Forces EVERY thought.id, comment.id, like voterId, and deletedId to String
 export function normalizeState(raw) {
-  if (!raw || typeof raw !== 'object') {
-    return createEmptyState();
-  }
+  if (!raw || typeof raw !== 'object') return defaultState();
 
-  // Handle nested wrapper responses (e.g., extendsclass { status: 0, data: "..." } or restful-api { data: { ... } })
-  let obj = raw;
-  if (typeof raw.data === 'string') {
-    try {
-      obj = JSON.parse(raw.data);
-    } catch {
-      obj = raw;
-    }
-  } else if (raw.data && typeof raw.data === 'object' && !Array.isArray(raw.data)) {
-    obj = raw.data;
-  }
-
-  // 1. Normalize thoughts
-  const thoughts = Array.isArray(obj.thoughts)
-    ? obj.thoughts
+  const thoughts = Array.isArray(raw.thoughts)
+    ? raw.thoughts
         .filter((t) => t && (t.id != null || t.title != null))
         .map((t) => ({
           ...t,
-          id: String(t.id || `thought_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`),
+          id: String(t.id || Date.now()),
+          number: t.number || '00',
           title: String(t.title || ''),
           content: String(t.content || ''),
           category: String(t.category || t.type || 'thought'),
+          type: String(t.type || t.category || 'thought'),
+          author: String(t.author || 'absurdharsh'),
+          date: t.date || 'Just Now',
+          doodle: t.doodle || (t.category === 'feeling' ? 'eye' : t.category === 'quote' ? 'spark' : 'star'),
           createdAt: typeof t.createdAt === 'number' ? t.createdAt : Date.now()
         }))
     : [];
 
-  // 2. Normalize comments
   const comments = {};
-  if (obj.comments && typeof obj.comments === 'object') {
-    for (const [entryId, list] of Object.entries(obj.comments)) {
+  if (raw.comments && typeof raw.comments === 'object') {
+    for (const [k, list] of Object.entries(raw.comments)) {
       if (Array.isArray(list)) {
-        comments[String(entryId)] = list
+        comments[String(k)] = list
           .filter((c) => c && c.text != null)
           .map((c) => ({
-            id: String(c.id || `c_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`),
+            id: String(c.id || Date.now()),
             text: String(c.text || ''),
-            timestamp: c.timestamp || (c.createdAt ? new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'just now'),
+            timestamp: c.timestamp || 'just now',
             createdAt: typeof c.createdAt === 'number' ? c.createdAt : Date.now()
           }));
       }
     }
   }
 
-  // 3. Normalize likes
   const likes = {};
-  if (obj.likes && typeof obj.likes === 'object') {
-    for (const [entryId, voters] of Object.entries(obj.likes)) {
+  if (raw.likes && typeof raw.likes === 'object') {
+    for (const [k, voters] of Object.entries(raw.likes)) {
       if (Array.isArray(voters)) {
-        likes[String(entryId)] = Array.from(new Set(voters.map(String).filter(Boolean)));
-      } else if (voters && typeof voters === 'object' && Array.isArray(voters.likedBy)) {
-        likes[String(entryId)] = Array.from(new Set(voters.likedBy.map(String).filter(Boolean)));
+        likes[String(k)] = Array.from(new Set(voters.map(String).filter(Boolean)));
       }
     }
   }
 
-  // 4. Normalize deletedIds
-  const deletedIds = Array.isArray(obj.deletedIds)
-    ? Array.from(new Set(obj.deletedIds.map(String).filter(Boolean)))
+  const deletedIds = Array.isArray(raw.deletedIds)
+    ? Array.from(new Set(raw.deletedIds.map(String).filter(Boolean)))
     : [];
 
   return { thoughts, comments, likes, deletedIds };
 }
 
-// Read current cached state from localStorage with migration from legacy keys
+// Read current cached state from localStorage with migration
 export function getLocalState() {
   if (typeof window === 'undefined' || !window.localStorage) {
-    return createEmptyState();
+    return defaultState();
   }
 
   try {
@@ -104,7 +83,7 @@ export function getLocalState() {
     console.warn('[DB] Failed reading local storage:', err);
   }
 
-  // Fallback: migrate from legacy keys if available
+  // Fallback: migrate from older keys if present
   try {
     const legacyThoughts = JSON.parse(localStorage.getItem('thoughts_sketchbook_entries_v4') || '[]');
     const legacyComments = JSON.parse(localStorage.getItem('thoughts_sketchbook_comments_v1') || '{}');
@@ -117,36 +96,28 @@ export function getLocalState() {
       likes: legacyLikes,
       deletedIds: legacyDeleted
     });
-
     saveLocalState(migrated);
     return migrated;
   } catch {
-    return createEmptyState();
+    return defaultState();
   }
 }
 
-// Save state to localStorage immediately
 export function saveLocalState(state) {
   if (typeof window === 'undefined' || !window.localStorage) return;
   try {
-    const normalized = normalizeState(state);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalized));
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalizeState(state)));
   } catch (err) {
     console.warn('[DB] Failed saving local state:', err);
   }
 }
 
-// Fetch the latest state from the shared cloud store
-export async function fetchCloudState() {
+// Fetch global store from /api/store
+export async function fetchStore() {
   const localFallback = getLocalState();
   try {
-    const cacheBuster = SHARED_DB_URL.includes('?') 
-      ? `${SHARED_DB_URL}&_t=${Date.now()}` 
-      : `${SHARED_DB_URL}?_t=${Date.now()}`;
-
-    const res = await fetch(cacheBuster, {
+    const res = await fetch(`${API_STORE_URL}?_t=${Date.now()}`, {
       method: 'GET',
-      mode: 'cors',
       cache: 'no-store',
       headers: {
         'Accept': 'application/json',
@@ -156,7 +127,7 @@ export async function fetchCloudState() {
     });
 
     if (!res.ok) {
-      console.warn(`[DB] Cloud GET returned status ${res.status}, using local cache.`);
+      console.warn(`[Store] GET returned status ${res.status}, using local fallback.`);
       return localFallback;
     }
 
@@ -165,79 +136,155 @@ export async function fetchCloudState() {
     saveLocalState(normalized);
     return normalized;
   } catch (err) {
-    console.warn('[DB] Cloud GET error (offline or network blocked), using local cache:', err);
+    console.warn('[Store] Network error fetching /api/store, using local fallback:', err.message);
     return localFallback;
   }
 }
 
-// Save the state to the shared cloud store via PUT
-export async function saveCloudState(state) {
-  const normalized = normalizeState(state);
-  saveLocalState(normalized);
-
+// Add thought to /api/store
+export async function addThoughtApi(thought) {
   try {
-    const res = await fetch(SHARED_DB_URL, {
-      method: 'PUT',
-      mode: 'cors',
+    const res = await fetch(API_STORE_URL, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify(normalized)
+      body: JSON.stringify({
+        action: 'add_thought',
+        thought
+      })
     });
 
-    if (!res.ok) {
-      console.warn(`[DB] Cloud PUT returned status ${res.status}`);
-      return false;
+    if (res.ok) {
+      const data = await res.json();
+      if (data.state) {
+        saveLocalState(data.state);
+        return data.state;
+      }
     }
-    return true;
   } catch (err) {
-    console.warn('[DB] Cloud PUT network error:', err);
+    console.warn('[Store] add_thought error:', err.message);
+  }
+  return null;
+}
+
+// Add anonymous comment to /api/store
+export async function addCommentApi(thoughtId, text) {
+  try {
+    const res = await fetch(API_STORE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        action: 'add_comment',
+        thoughtId: String(thoughtId),
+        text
+      })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.state) {
+        saveLocalState(data.state);
+        return data.state;
+      }
+    }
+  } catch (err) {
+    console.warn('[Store] add_comment error:', err.message);
+  }
+  return null;
+}
+
+// Toggle like for an entry on /api/store
+export async function toggleLikeApi(thoughtId, voterId) {
+  try {
+    const res = await fetch(API_STORE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        action: 'toggle_like',
+        thoughtId: String(thoughtId),
+        voterId
+      })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.state) {
+        saveLocalState(data.state);
+        return data.state;
+      }
+    }
+  } catch (err) {
+    console.warn('[Store] toggle_like error:', err.message);
+  }
+  return null;
+}
+
+// Verify owner passkey on /api/store
+export async function verifyOwnerApi(passkey) {
+  if (!passkey) return false;
+  try {
+    const res = await fetch(API_STORE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        action: 'verify_owner',
+        passkey: passkey.trim()
+      })
+    });
+    return res.status === 200;
+  } catch (err) {
+    console.warn('[Store] verify_owner error:', err.message);
     return false;
   }
 }
 
-// Atomic Fetch-Modify-Save cycle (prevents lost updates)
-// 1. GET latest JSON with cache: 'no-store'
-// 2. Ensure all keys exist
-// 3. Run mutatorFn(state)
-// 4. Save state to localStorage immediately AND PUT to SHARED_DB_URL
-// 5. Return the updated normalized state
-export async function syncWithCloud(mutatorFn) {
-  // 1. Fetch latest state from cloud (cache: 'no-store'), falling back to localStorage
-  const current = await fetchCloudState();
+// Owner delete thought or comment on /api/store
+export async function ownerDeleteApi({ thoughtId, commentId, passkey }) {
+  try {
+    const res = await fetch(API_STORE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        action: 'owner_delete',
+        thoughtId: thoughtId ? String(thoughtId) : undefined,
+        commentId: commentId ? String(commentId) : undefined,
+        passkey: passkey ? passkey.trim() : ''
+      })
+    });
 
-  // 2. Ensure all keys exist
-  let state = normalizeState(current);
-
-  // 3. Run mutator
-  if (typeof mutatorFn === 'function') {
-    const result = mutatorFn(state);
-    if (result && typeof result === 'object') {
-      state = result;
+    if (res.ok) {
+      const data = await res.json();
+      if (data.state) {
+        saveLocalState(data.state);
+        return data.state;
+      }
     }
+  } catch (err) {
+    console.warn('[Store] owner_delete error:', err.message);
   }
-
-  // Force clean normalization after mutation
-  state = normalizeState(state);
-
-  // 4. Save to local storage immediately
-  saveLocalState(state);
-
-  // 5. Save to cloud asynchronously
-  saveCloudState(state).catch((err) => {
-    console.warn('[DB] Background cloud save error:', err);
-  });
-
-  return state;
+  return null;
 }
 
-// Merge INITIAL_ENTRIES and dynamic cloud thoughts while excluding deletedIds
+// Combine INITIAL_ENTRIES and dynamic server thoughts while excluding deletedIds
 export function mergeEntries(initialEntries = [], cloudThoughts = [], deletedIds = []) {
   const deletedSet = new Set((deletedIds || []).map((id) => String(id)));
   const map = new Map();
 
-  // 1. Dynamic thoughts added by users (excluding deleted)
+  // 1. Dynamic thoughts from server (excluding deleted)
   (cloudThoughts || []).forEach((t) => {
     if (t && t.id != null) {
       const idStr = String(t.id);
@@ -263,11 +310,10 @@ export function mergeEntries(initialEntries = [], cloudThoughts = [], deletedIds
     }
   });
 
-  // Sort descending by creation date / timestamp / ID so most recent appears first
+  // Sort descending by creation timestamp so most recent appears first
   return Array.from(map.values()).sort((a, b) => {
     const timeA = a.createdAt || (a.id && a.id.startsWith('entry-') ? parseInt(a.id.replace('entry-', ''), 10) || 0 : 0);
     const timeB = b.createdAt || (b.id && b.id.startsWith('entry-') ? parseInt(b.id.replace('entry-', ''), 10) || 0 : 0);
     return timeB - timeA;
   });
 }
-

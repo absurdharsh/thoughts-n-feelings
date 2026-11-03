@@ -8,33 +8,15 @@ import { INITIAL_ENTRIES } from './data/initialThoughts';
 import { getPersistentVoterId } from './utils/voterId';
 import {
   getLocalState,
-  syncWithCloud,
-  fetchCloudState,
+  saveLocalState,
+  fetchStore,
+  addThoughtApi,
+  addCommentApi,
+  toggleLikeApi,
+  verifyOwnerApi,
+  ownerDeleteApi,
   mergeEntries
 } from './db';
-import {
-  isSupabaseConfigured,
-  supabase,
-  fetchThoughtsFromSupabase,
-  insertThoughtToSupabase,
-  fetchCommentsFromSupabase,
-  insertCommentToSupabase,
-  fetchLikesFromSupabase,
-  toggleLikeInSupabase
-} from './services/supabaseClient';
-
-// Exact owner passkey verification helper (SHA-256 hex digest)
-const OWNER_PASSKEY_HASH = 'acf7001eb827b019664b5f194d8969ed537f78d95117b0928d7eed0a6fec242d';
-
-async function verifyOwnerPasskey(input) {
-  if (!input) return false;
-  const data = new TextEncoder().encode(input.trim());
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashHex = Array.from(new Uint8Array(hashBuffer))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-  return hashHex === OWNER_PASSKEY_HASH;
-}
 
 // Check if owner mode is unlocked in sessionStorage or localStorage
 function checkOwnerUnlocked() {
@@ -45,6 +27,15 @@ function checkOwnerUnlocked() {
     );
   } catch {
     return false;
+  }
+}
+
+// Retrieve stored owner passkey for server-side verification
+function getStoredOwnerPasskey() {
+  try {
+    return (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('tf_owner_passkey')) || '';
+  } catch {
+    return '';
   }
 }
 
@@ -77,7 +68,7 @@ export default function App() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Secret Owner Session (verified via SHA-256 and stored in sessionStorage)
+  // Secret Owner Session (verified on the server via /api/store)
   const [isOwner, setIsOwner] = useState(checkOwnerUnlocked);
 
   const isSyncingRef = useRef(false);
@@ -89,41 +80,19 @@ export default function App() {
     });
   }, []);
 
-  // Synchronize state from remote cloud endpoint
+  // Synchronize state from /api/store
   const syncFromRemote = useCallback(async () => {
     if (isSyncingRef.current) return;
     isSyncingRef.current = true;
 
     try {
-      const freshCloud = await fetchCloudState();
-      if (freshCloud) {
-        setDbState(freshCloud);
-        setEntries(mergeEntries(INITIAL_ENTRIES, freshCloud.thoughts, freshCloud.deletedIds));
-      }
-
-      // If Supabase is configured, sync in parallel
-      if (isSupabaseConfigured) {
-        const [sbThoughts, sbComments, sbLikes] = await Promise.all([
-          fetchThoughtsFromSupabase(),
-          fetchCommentsFromSupabase(),
-          fetchLikesFromSupabase()
-        ]);
-
-        if (sbThoughts || sbComments || sbLikes) {
-          setDbState((prev) => {
-            const nextThoughts = sbThoughts
-              ? [...prev.thoughts, ...sbThoughts.filter(st => !prev.thoughts.some(pt => String(pt.id) === String(st.id)))]
-              : prev.thoughts;
-            const nextComments = sbComments ? { ...prev.comments, ...sbComments } : prev.comments;
-            const nextLikes = sbLikes ? { ...prev.likes, ...sbLikes } : prev.likes;
-            const next = { ...prev, thoughts: nextThoughts, comments: nextComments, likes: nextLikes };
-            setEntries(mergeEntries(INITIAL_ENTRIES, next.thoughts, next.deletedIds));
-            return next;
-          });
-        }
+      const fresh = await fetchStore();
+      if (fresh) {
+        setDbState(fresh);
+        setEntries(mergeEntries(INITIAL_ENTRIES, fresh.thoughts, fresh.deletedIds));
       }
     } catch (err) {
-      console.warn('[Sync] Error syncing remote state:', err);
+      console.warn('[Sync] Error syncing /api/store:', err);
     } finally {
       isSyncingRef.current = false;
     }
@@ -161,7 +130,7 @@ export default function App() {
     } catch {}
   }, [isDark]);
 
-  // Real 1-Like-Per-User Enforcement with atomic sync
+  // Real 1-Like-Per-User Enforcement with server persistence
   const handleToggleLike = async (entryId) => {
     const targetId = String(entryId);
     let curVoterId = voterId;
@@ -179,39 +148,21 @@ export default function App() {
         ? currentList.filter((id) => id !== curVoterId)
         : Array.from(new Set([...currentList, curVoterId]));
 
-      return {
+      const next = {
         ...prev,
         likes: {
           ...prev.likes,
           [targetId]: nextList
         }
       };
+      saveLocalState(next);
+      return next;
     });
 
-    // 2. Persist to shared cloud database
-    const updated = await syncWithCloud((current) => {
-      const likesMap = current.likes || {};
-      const currentList = Array.isArray(likesMap[targetId]) ? likesMap[targetId] : [];
-      const hasLiked = currentList.includes(curVoterId);
-      const nextList = hasLiked
-        ? currentList.filter((id) => id !== curVoterId)
-        : Array.from(new Set([...currentList, curVoterId]));
-
-      return {
-        ...current,
-        likes: {
-          ...likesMap,
-          [targetId]: nextList
-        }
-      };
-    });
-
+    // 2. Persist to /api/store
+    const updated = await toggleLikeApi(targetId, curVoterId);
     if (updated) {
       setDbState(updated);
-    }
-
-    if (isSupabaseConfigured) {
-      toggleLikeInSupabase(targetId, curVoterId).catch(() => {});
     }
   };
 
@@ -221,6 +172,7 @@ export default function App() {
       if (checkOwnerUnlocked()) {
         const lock = window.confirm('Owner mode is currently active. Would you like to lock it?');
         if (lock) {
+          sessionStorage.removeItem('tf_owner_passkey');
           sessionStorage.removeItem('tf_owner_unlocked');
           localStorage.removeItem('tf_owner_unlocked');
           setIsOwner(false);
@@ -233,8 +185,9 @@ export default function App() {
       if (!input) return;
 
       try {
-        const valid = await verifyOwnerPasskey(input);
+        const valid = await verifyOwnerApi(input);
         if (valid) {
+          sessionStorage.setItem('tf_owner_passkey', input.trim());
           sessionStorage.setItem('tf_owner_unlocked', 'true');
           localStorage.setItem('tf_owner_unlocked', 'true');
           setIsOwner(true);
@@ -272,18 +225,21 @@ export default function App() {
   }, []);
 
   // Hidden Owner-Only deletion for thoughts/feelings/quotes:
-  // Immediately removes from DOM and persists globally across cloud DB & localStorage
+  // Immediately removes from DOM and persists globally to /api/store
   const handleDeleteEntry = async (entryId) => {
     const targetId = String(entryId);
+    let passkey = getStoredOwnerPasskey();
 
-    if (!checkOwnerUnlocked()) {
+    if (!checkOwnerUnlocked() || !passkey) {
       const input = window.prompt('Enter owner passkey:');
       if (!input) return;
-      const valid = await verifyOwnerPasskey(input);
+      const valid = await verifyOwnerApi(input);
       if (!valid) {
         window.alert('Invalid passkey.');
         return;
       }
+      passkey = input.trim();
+      sessionStorage.setItem('tf_owner_passkey', passkey);
       sessionStorage.setItem('tf_owner_unlocked', 'true');
       localStorage.setItem('tf_owner_unlocked', 'true');
       setIsOwner(true);
@@ -300,57 +256,32 @@ export default function App() {
       const nextLikes = { ...prev.likes };
       delete nextLikes[targetId];
 
-      return {
+      const next = {
         ...prev,
         thoughts,
         deletedIds,
         comments: nextComments,
         likes: nextLikes
       };
+      saveLocalState(next);
+      return next;
     });
 
-    // 2. Persist deletion in shared cloud database
-    const updated = await syncWithCloud((current) => {
-      const thoughts = (current.thoughts || []).filter((item) => String(item.id) !== targetId);
-      const deletedIds = Array.from(new Set([...(current.deletedIds || []), targetId]));
-      const nextComments = { ...(current.comments || {}) };
-      delete nextComments[targetId];
-      const nextLikes = { ...(current.likes || {}) };
-      delete nextLikes[targetId];
-
-      return {
-        ...current,
-        thoughts,
-        deletedIds,
-        comments: nextComments,
-        likes: nextLikes
-      };
-    });
-
+    // 2. Persist deletion in /api/store
+    const updated = await ownerDeleteApi({ thoughtId: targetId, passkey });
     if (updated) {
       setDbState(updated);
       setEntries(mergeEntries(INITIAL_ENTRIES, updated.thoughts, updated.deletedIds));
-    }
-
-    // 3. If Supabase is configured, delete from database as well
-    if (isSupabaseConfigured && supabase) {
-      Promise.all([
-        supabase.from('thoughts').delete().eq('id', targetId),
-        supabase.from('comments').delete().eq('thought_id', targetId),
-        supabase.from('likes').delete().eq('thought_id', targetId)
-      ]).catch((err) => {
-        console.warn('[Supabase] Error deleting thought from table:', err);
-      });
     }
   };
 
   // Fetch fresh comments from remote whenever a user opens a comment dropdown
   const handleOpenComments = useCallback(async () => {
     try {
-      const freshCloud = await fetchCloudState();
-      if (freshCloud) {
-        setDbState(freshCloud);
-        setEntries(mergeEntries(INITIAL_ENTRIES, freshCloud.thoughts, freshCloud.deletedIds));
+      const fresh = await fetchStore();
+      if (fresh) {
+        setDbState(fresh);
+        setEntries(mergeEntries(INITIAL_ENTRIES, fresh.thoughts, fresh.deletedIds));
       }
     } catch (err) {
       console.warn('[Comments] Error refreshing comments on open:', err);
@@ -358,7 +289,7 @@ export default function App() {
   }, []);
 
   // Add anonymous comment to an entry:
-  // Persisted immediately to cloud database & local storage
+  // Persisted immediately to /api/store & local cache
   const handleAddComment = async (entryId, text) => {
     if (!text || !text.trim()) return;
     const targetId = String(entryId);
@@ -377,51 +308,41 @@ export default function App() {
     setDbState((prev) => {
       const commentsMap = prev.comments || {};
       const updatedList = [...(commentsMap[targetId] || []), newComment];
-      return {
+      const next = {
         ...prev,
         comments: {
           ...commentsMap,
           [targetId]: updatedList
         }
       };
+      saveLocalState(next);
+      return next;
     });
 
-    // 2. Persist atomically to shared cloud store
-    const updated = await syncWithCloud((current) => {
-      const commentsMap = current.comments || {};
-      const existingList = commentsMap[targetId] || [];
-      return {
-        ...current,
-        comments: {
-          ...commentsMap,
-          [targetId]: [...existingList, newComment]
-        }
-      };
-    });
-
+    // 2. Persist to /api/store
+    const updated = await addCommentApi(targetId, text.trim());
     if (updated) {
       setDbState(updated);
-    }
-
-    if (isSupabaseConfigured) {
-      insertCommentToSupabase(targetId, text.trim()).catch(() => {});
     }
   };
 
   // Hidden Owner-Only deletion for an individual anonymous comment:
-  // Immediately removes from DOM and persists globally across cloud DB & localStorage
+  // Immediately removes from DOM and persists globally to /api/store
   const handleDeleteComment = async (entryId, commentId) => {
     const targetEntryId = String(entryId);
     const targetCommentId = String(commentId);
+    let passkey = getStoredOwnerPasskey();
 
-    if (!checkOwnerUnlocked()) {
+    if (!checkOwnerUnlocked() || !passkey) {
       const input = window.prompt('Enter owner passkey:');
       if (!input) return;
-      const valid = await verifyOwnerPasskey(input);
+      const valid = await verifyOwnerApi(input);
       if (!valid) {
         window.alert('Invalid passkey.');
         return;
       }
+      passkey = input.trim();
+      sessionStorage.setItem('tf_owner_passkey', passkey);
       sessionStorage.setItem('tf_owner_unlocked', 'true');
       localStorage.setItem('tf_owner_unlocked', 'true');
       setIsOwner(true);
@@ -431,37 +352,25 @@ export default function App() {
     setDbState((prev) => {
       const commentsMap = prev.comments || {};
       const updatedList = (commentsMap[targetEntryId] || []).filter((c) => String(c.id) !== targetCommentId);
-      return {
+      const next = {
         ...prev,
         comments: {
           ...commentsMap,
           [targetEntryId]: updatedList
         }
       };
+      saveLocalState(next);
+      return next;
     });
 
-    // 2. Persist deletion in shared cloud database
-    const updated = await syncWithCloud((current) => {
-      const commentsMap = current.comments || {};
-      const updatedList = (commentsMap[targetEntryId] || []).filter((c) => String(c.id) !== targetCommentId);
-      return {
-        ...current,
-        comments: {
-          ...commentsMap,
-          [targetEntryId]: updatedList
-        }
-      };
+    // 2. Persist deletion in /api/store
+    const updated = await ownerDeleteApi({
+      thoughtId: targetEntryId,
+      commentId: targetCommentId,
+      passkey
     });
-
     if (updated) {
       setDbState(updated);
-    }
-
-    // 3. If Supabase is configured, delete from comments table as well
-    if (isSupabaseConfigured && supabase) {
-      supabase.from('comments').delete().eq('id', targetCommentId).catch((err) => {
-        console.warn('[Supabase] Comment deletion error:', err);
-      });
     }
   };
 
@@ -470,7 +379,7 @@ export default function App() {
   };
 
   // Submit new thought or feeling:
-  // Prepend to top immediately and persist via cloud store
+  // Prepend to top immediately and persist via /api/store
   const handleSaveEntry = async (newEntry) => {
     const thoughtId = String(newEntry.id || `thought_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`);
     const formatted = {
@@ -489,28 +398,20 @@ export default function App() {
 
     // 1. Optimistic local update (prepended to top)
     setEntries((prev) => [formatted, ...prev.filter((t) => String(t.id) !== thoughtId)]);
-    setDbState((prev) => ({
-      ...prev,
-      thoughts: [formatted, ...prev.thoughts.filter((t) => String(t.id) !== thoughtId)]
-    }));
-
-    // 2. Persist to shared cloud database
-    const updated = await syncWithCloud((current) => {
-      const thoughts = current.thoughts || [];
-      const filtered = thoughts.filter((t) => String(t.id) !== thoughtId);
-      return {
-        ...current,
-        thoughts: [formatted, ...filtered]
+    setDbState((prev) => {
+      const next = {
+        ...prev,
+        thoughts: [formatted, ...prev.thoughts.filter((t) => String(t.id) !== thoughtId)]
       };
+      saveLocalState(next);
+      return next;
     });
 
+    // 2. Persist to /api/store
+    const updated = await addThoughtApi(formatted);
     if (updated) {
       setDbState(updated);
       setEntries(mergeEntries(INITIAL_ENTRIES, updated.thoughts, updated.deletedIds));
-    }
-
-    if (isSupabaseConfigured) {
-      insertThoughtToSupabase(formatted).catch(() => {});
     }
   };
 
