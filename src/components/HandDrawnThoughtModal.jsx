@@ -22,7 +22,6 @@ export default function HandDrawnThoughtModal({ isOpen, onClose, onSaveEntry }) 
 
     const newEntry = {
       id: `entry-${Date.now()}`,
-      number: String(Math.floor(Math.random() * 90) + 10),
       type,
       title: title.trim(),
       author: author.trim() || 'absurdharsh',

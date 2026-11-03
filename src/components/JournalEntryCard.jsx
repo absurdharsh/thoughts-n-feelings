@@ -105,7 +105,7 @@ export default function JournalEntryCard({
       <div className="flex items-center justify-between pb-3">
         <div className="flex items-baseline gap-3">
           <span className="font-editorial italic text-3xl sm:text-4xl text-ink/40 dark:text-darkInk/40">
-            {entry.number || String(index + 1).padStart(2, '0')}.
+            {String(index + 1).padStart(2, '0')}.
           </span>
           <span className="font-handwritten text-base sm:text-lg uppercase tracking-wider text-ink/60 dark:text-darkInk/60">
             {entry.type}
