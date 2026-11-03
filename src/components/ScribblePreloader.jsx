@@ -152,50 +152,50 @@ export default function ScribblePreloader({ isDark, onComplete }) {
 
       {/* Center Drawing Canvas */}
       <div className="relative flex-grow flex flex-col items-center justify-center my-auto">
-        <div className="relative w-64 sm:w-72 md:w-80 aspect-[1080/1350] flex items-center justify-center">
+        <div className="relative w-64 sm:w-72 md:w-80 aspect-[1080/1350] bg-white rounded-lg overflow-hidden shadow-lg border border-black/15 dark:border-white/20 flex items-center justify-center">
           
-          {/* Sketchbook Plate Border */}
-          <div className="absolute inset-0 border border-dashed border-ink/20 dark:border-darkInk/25 rounded-lg pointer-events-none" />
+          {/* Sketchbook Plate Inset Border */}
+          <div className="absolute inset-0 border border-dashed border-black/20 rounded-lg pointer-events-none z-20" />
 
-          {/* 1. Organic Hand-Drawn Scribble Paths */}
+          {/* 1. Organic Hand-Drawn Scribble Paths (Always pure black ink strokes) */}
           <svg
-            className="absolute inset-0 w-full h-full pointer-events-none overflow-visible"
+            className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-10"
             viewBox="0 0 600 750"
             fill="none"
           >
             <path
               ref={scribblePathRef1}
               d="M100 250 C 180 120, 320 80, 420 180 C 520 280, 480 420, 350 480 C 220 540, 120 420, 180 300 C 240 180, 440 220, 480 360 C 520 500, 380 620, 260 560 C 140 500, 180 320, 300 240 Z"
-              stroke="currentColor"
+              stroke="#000000"
               strokeWidth="3.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-ink/80 dark:text-darkInk/80"
+              className="text-black/80"
             />
             <path
               ref={scribblePathRef2}
               d="M200 160 Q 380 280 500 180 T 320 420 Q 180 290 380 140 T 520 380 Q 380 520 220 340 Z"
-              stroke="currentColor"
+              stroke="#000000"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-ink/60 dark:text-darkInk/60"
+              className="text-black/60"
             />
             <path
               ref={scribblePathRef3}
               d="M280 100 C 190 200, 150 360, 260 420 C 370 480, 500 390, 520 260 C 540 130, 400 90, 300 180 Z"
-              stroke="currentColor"
+              stroke="#000000"
               strokeWidth="4"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-ink/40 dark:text-darkInk/40"
+              className="text-black/40"
             />
           </svg>
 
-          {/* 2. Skeleton Contour Vectors that Draw In */}
+          {/* 2. Skeleton Contour Vectors that Draw In (Always pure black ink strokes) */}
           <svg
             ref={skeletonSvgRef}
-            className="absolute inset-0 w-full h-full pointer-events-none p-2"
+            className="absolute inset-0 w-full h-full pointer-events-none p-2 z-15 text-black"
             viewBox="0 0 400 500"
             fill="none"
           >
@@ -203,7 +203,7 @@ export default function ScribblePreloader({ isDark, onComplete }) {
             <path
               className="draw-path"
               d="M160 140 C 140 110, 180 80, 210 95 C 240 110, 245 150, 225 175 C 205 195, 175 190, 160 170 C 150 155, 150 145, 160 140 Z"
-              stroke="currentColor"
+              stroke="#000000"
               strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -212,7 +212,7 @@ export default function ScribblePreloader({ isDark, onComplete }) {
             <path
               className="draw-path"
               d="M230 150 C 220 125, 255 105, 275 120 C 295 135, 295 170, 280 190 C 265 205, 240 200, 230 185 Z"
-              stroke="currentColor"
+              stroke="#000000"
               strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -221,7 +221,7 @@ export default function ScribblePreloader({ isDark, onComplete }) {
             <path
               className="draw-path"
               d="M120 190 L 220 250 M 110 230 L 195 285 M 260 235 L 320 300"
-              stroke="currentColor"
+              stroke="#000000"
               strokeWidth="4"
               strokeLinecap="round"
             />
@@ -229,7 +229,7 @@ export default function ScribblePreloader({ isDark, onComplete }) {
             <path
               className="draw-path"
               d="M140 270 Q 180 290 220 275 M 135 300 Q 185 320 225 305 M 140 330 Q 190 350 230 335 M 150 360 Q 195 380 235 365"
-              stroke="currentColor"
+              stroke="#000000"
               strokeWidth="3.5"
               strokeLinecap="round"
             />
@@ -237,7 +237,7 @@ export default function ScribblePreloader({ isDark, onComplete }) {
             <path
               className="draw-path"
               d="M225 240 C 225 280, 235 340, 245 400"
-              stroke="currentColor"
+              stroke="#000000"
               strokeWidth="4.5"
               strokeLinecap="round"
             />
@@ -245,23 +245,21 @@ export default function ScribblePreloader({ isDark, onComplete }) {
             <path
               className="draw-path"
               d="M90 140 L 130 200 M 80 180 L 120 240 M 310 140 L 350 200 M 320 190 L 360 250 M 120 400 L 170 440"
-              stroke="currentColor"
+              stroke="#000000"
               strokeWidth="2"
               strokeLinecap="round"
             />
           </svg>
 
-          {/* 3. The Finished Master Ink Illustration (Solidifies on Paper) */}
+          {/* 3. The Finished Master Ink Illustration (Always black ink on white paper) */}
           <div
             ref={illustrationRef}
-            className="absolute inset-0 w-full h-full pointer-events-none"
+            className="absolute inset-0 w-full h-full pointer-events-none z-18"
           >
             <img
               src="/illustration/illustration-clean.webp"
               alt="Two in Embrace Hand-Drawn Ink Illustration"
-              className={`w-full h-full object-contain ${
-                isDark ? 'invert brightness-95 contrast-125' : ''
-              }`}
+              className="w-full h-full object-contain"
             />
           </div>
         </div>

@@ -98,21 +98,21 @@ export default function InteractiveHeroIllustration({ isDark }) {
 
   return (
     <div className="my-8 flex flex-col items-center justify-center select-none">
-      {/* Hand-Drawn Sketchbook Specimen Frame */}
+      {/* Hand-Drawn Sketchbook Specimen Frame (Always pure white paper background with black ink strokes) */}
       <div
         ref={containerRef}
         onMouseMove={handlePointerMove}
         onMouseLeave={handlePointerLeave}
         onTouchMove={handlePointerMove}
         onTouchEnd={handlePointerLeave}
-        className="relative w-64 sm:w-72 md:w-80 aspect-[1080/1350] cursor-grab active:cursor-grabbing transition-transform duration-100 ease-out"
+        className="relative w-64 sm:w-72 md:w-80 aspect-[1080/1350] bg-white rounded-lg overflow-hidden shadow-md border border-black/15 dark:border-white/20 cursor-grab active:cursor-grabbing transition-transform duration-100 ease-out"
         style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
         title="Move pointer across to inspect interactive pose frames"
       >
-        {/* Paper Inset Shadow / Glow */}
-        <div className="absolute inset-0 rounded-lg pointer-events-none border border-ink/15 dark:border-darkInk/20 shadow-sm" />
+        {/* Paper Inset Shadow / Inner Border */}
+        <div className="absolute inset-0 rounded-lg pointer-events-none border border-black/10 dark:border-white/10 shadow-inner z-20" />
 
-        {/* 5 WebP interactive pose frames */}
+        {/* 5 WebP interactive pose frames (always crisp black strokes on white background) */}
         {[1, 2, 3, 4, 5].map((num, i) => (
           <img
             key={num}
@@ -120,7 +120,7 @@ export default function InteractiveHeroIllustration({ isDark }) {
             alt={`Two in Embrace - Pose ${num}`}
             className={`absolute inset-0 w-full h-full object-contain pointer-events-none transition-opacity duration-75 ${
               activeFrame === i ? 'opacity-100' : 'opacity-0'
-            } ${isDark ? 'invert brightness-95 contrast-125' : ''}`}
+            }`}
             loading="eager"
           />
         ))}
@@ -134,7 +134,7 @@ export default function InteractiveHeroIllustration({ isDark }) {
             src="/illustration/layer-skulls.png"
             alt=""
             aria-hidden="true"
-            className={`w-full h-full object-contain opacity-0 ${isDark ? 'invert brightness-95' : ''}`}
+            className="w-full h-full object-contain opacity-0"
           />
         </div>
 
@@ -147,7 +147,7 @@ export default function InteractiveHeroIllustration({ isDark }) {
             src="/illustration/layer-body.png"
             alt=""
             aria-hidden="true"
-            className={`w-full h-full object-contain opacity-0 ${isDark ? 'invert brightness-95' : ''}`}
+            className="w-full h-full object-contain opacity-0"
           />
         </div>
       </div>
