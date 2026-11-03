@@ -11,7 +11,8 @@ export function defaultState() {
     thoughts: [],
     comments: {},
     likes: {},
-    deletedIds: []
+    deletedIds: [],
+    persistent: true
   };
 }
 
@@ -65,7 +66,9 @@ export function normalizeState(raw) {
     ? Array.from(new Set(raw.deletedIds.map(String).filter(Boolean)))
     : [];
 
-  return { thoughts, comments, likes, deletedIds };
+  const persistent = raw.persistent !== false;
+
+  return { thoughts, comments, likes, deletedIds, persistent };
 }
 
 // Read current cached state from localStorage with migration
@@ -94,7 +97,8 @@ export function getLocalState() {
       thoughts: legacyThoughts,
       comments: legacyComments,
       likes: legacyLikes,
-      deletedIds: legacyDeleted
+      deletedIds: legacyDeleted,
+      persistent: true
     });
     saveLocalState(migrated);
     return migrated;
@@ -112,7 +116,7 @@ export function saveLocalState(state) {
   }
 }
 
-// Fetch global store from /api/store
+// Fetch global store from /api/store with strict cache: 'no-store'
 export async function fetchStore() {
   const localFallback = getLocalState();
   try {
@@ -132,6 +136,15 @@ export async function fetchStore() {
     }
 
     const data = await res.json();
+
+    if (data.persistent === false) {
+      console.warn('[Store] Notice: Cloud DB not yet connected in Vercel settings (KV_REST_API_URL). Using local state.');
+      return {
+        ...localFallback,
+        persistent: false
+      };
+    }
+
     const normalized = normalizeState(data);
     saveLocalState(normalized);
     return normalized;
@@ -144,11 +157,14 @@ export async function fetchStore() {
 // Add thought to /api/store
 export async function addThoughtApi(thought) {
   try {
-    const res = await fetch(API_STORE_URL, {
+    const res = await fetch(`${API_STORE_URL}?_t=${Date.now()}`, {
       method: 'POST',
+      cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Pragma': 'no-cache',
+        'Cache-Control': 'no-cache'
       },
       body: JSON.stringify({
         action: 'add_thought',
@@ -158,7 +174,7 @@ export async function addThoughtApi(thought) {
 
     if (res.ok) {
       const data = await res.json();
-      if (data.state) {
+      if (data.state && data.persistent !== false) {
         saveLocalState(data.state);
         return data.state;
       }
@@ -172,11 +188,14 @@ export async function addThoughtApi(thought) {
 // Add anonymous comment to /api/store
 export async function addCommentApi(thoughtId, text) {
   try {
-    const res = await fetch(API_STORE_URL, {
+    const res = await fetch(`${API_STORE_URL}?_t=${Date.now()}`, {
       method: 'POST',
+      cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Pragma': 'no-cache',
+        'Cache-Control': 'no-cache'
       },
       body: JSON.stringify({
         action: 'add_comment',
@@ -187,7 +206,7 @@ export async function addCommentApi(thoughtId, text) {
 
     if (res.ok) {
       const data = await res.json();
-      if (data.state) {
+      if (data.state && data.persistent !== false) {
         saveLocalState(data.state);
         return data.state;
       }
@@ -201,11 +220,14 @@ export async function addCommentApi(thoughtId, text) {
 // Toggle like for an entry on /api/store
 export async function toggleLikeApi(thoughtId, voterId) {
   try {
-    const res = await fetch(API_STORE_URL, {
+    const res = await fetch(`${API_STORE_URL}?_t=${Date.now()}`, {
       method: 'POST',
+      cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Pragma': 'no-cache',
+        'Cache-Control': 'no-cache'
       },
       body: JSON.stringify({
         action: 'toggle_like',
@@ -216,7 +238,7 @@ export async function toggleLikeApi(thoughtId, voterId) {
 
     if (res.ok) {
       const data = await res.json();
-      if (data.state) {
+      if (data.state && data.persistent !== false) {
         saveLocalState(data.state);
         return data.state;
       }
@@ -231,11 +253,14 @@ export async function toggleLikeApi(thoughtId, voterId) {
 export async function verifyOwnerApi(passkey) {
   if (!passkey) return false;
   try {
-    const res = await fetch(API_STORE_URL, {
+    const res = await fetch(`${API_STORE_URL}?_t=${Date.now()}`, {
       method: 'POST',
+      cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Pragma': 'no-cache',
+        'Cache-Control': 'no-cache'
       },
       body: JSON.stringify({
         action: 'verify_owner',
@@ -252,11 +277,14 @@ export async function verifyOwnerApi(passkey) {
 // Owner delete thought or comment on /api/store
 export async function ownerDeleteApi({ thoughtId, commentId, passkey }) {
   try {
-    const res = await fetch(API_STORE_URL, {
+    const res = await fetch(`${API_STORE_URL}?_t=${Date.now()}`, {
       method: 'POST',
+      cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Pragma': 'no-cache',
+        'Cache-Control': 'no-cache'
       },
       body: JSON.stringify({
         action: 'owner_delete',
@@ -268,7 +296,7 @@ export async function ownerDeleteApi({ thoughtId, commentId, passkey }) {
 
     if (res.ok) {
       const data = await res.json();
-      if (data.state) {
+      if (data.state && data.persistent !== false) {
         saveLocalState(data.state);
         return data.state;
       }

@@ -87,7 +87,7 @@ export default function App() {
 
     try {
       const fresh = await fetchStore();
-      if (fresh) {
+      if (fresh && fresh.persistent !== false) {
         setDbState(fresh);
         setEntries(mergeEntries(INITIAL_ENTRIES, fresh.thoughts, fresh.deletedIds));
       }
@@ -161,7 +161,7 @@ export default function App() {
 
     // 2. Persist to /api/store
     const updated = await toggleLikeApi(targetId, curVoterId);
-    if (updated) {
+    if (updated && updated.persistent !== false) {
       setDbState(updated);
     }
   };
@@ -269,7 +269,7 @@ export default function App() {
 
     // 2. Persist deletion in /api/store
     const updated = await ownerDeleteApi({ thoughtId: targetId, passkey });
-    if (updated) {
+    if (updated && updated.persistent !== false) {
       setDbState(updated);
       setEntries(mergeEntries(INITIAL_ENTRIES, updated.thoughts, updated.deletedIds));
     }
@@ -279,7 +279,7 @@ export default function App() {
   const handleOpenComments = useCallback(async () => {
     try {
       const fresh = await fetchStore();
-      if (fresh) {
+      if (fresh && fresh.persistent !== false) {
         setDbState(fresh);
         setEntries(mergeEntries(INITIAL_ENTRIES, fresh.thoughts, fresh.deletedIds));
       }
@@ -321,7 +321,7 @@ export default function App() {
 
     // 2. Persist to /api/store
     const updated = await addCommentApi(targetId, text.trim());
-    if (updated) {
+    if (updated && updated.persistent !== false) {
       setDbState(updated);
     }
   };
@@ -369,7 +369,7 @@ export default function App() {
       commentId: targetCommentId,
       passkey
     });
-    if (updated) {
+    if (updated && updated.persistent !== false) {
       setDbState(updated);
     }
   };
@@ -409,7 +409,7 @@ export default function App() {
 
     // 2. Persist to /api/store
     const updated = await addThoughtApi(formatted);
-    if (updated) {
+    if (updated && updated.persistent !== false) {
       setDbState(updated);
       setEntries(mergeEntries(INITIAL_ENTRIES, updated.thoughts, updated.deletedIds));
     }
