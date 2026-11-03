@@ -248,7 +248,7 @@ async function supabaseFetchStore(db) {
     content: String(t.content || ''),
     category: String(t.category || 'thought'),
     type: String(t.category || 'thought'),
-    author: 'absurdharsh',
+    author: String(t.author || 'absurdharsh'),
     date: 'Just Now',
     createdAt: new Date(t.created_at).getTime()
   }));
@@ -412,10 +412,14 @@ export default async function handler(req, res) {
           delete state.likes[tId];
 
           if (db.type === 'supabase') {
-            fetch(`${db.url}/rest/v1/thoughts?id=eq.${tId}`, {
-              method: 'DELETE',
-              headers: { 'apikey': db.key, 'Authorization': `Bearer ${db.key}` }
-            }).catch(() => {});
+            try {
+              await fetch(`${db.url}/rest/v1/thoughts?id=eq.${tId}`, {
+                method: 'DELETE',
+                headers: { 'apikey': db.key, 'Authorization': `Bearer ${db.key}` }
+              });
+            } catch (delErr) {
+              console.error('[Supabase delete thought] Error:', delErr);
+            }
           }
         }
 
@@ -428,10 +432,14 @@ export default async function handler(req, res) {
           }
 
           if (db.type === 'supabase') {
-            fetch(`${db.url}/rest/v1/comments?id=eq.${cId}`, {
-              method: 'DELETE',
-              headers: { 'apikey': db.key, 'Authorization': `Bearer ${db.key}` }
-            }).catch(() => {});
+            try {
+              await fetch(`${db.url}/rest/v1/comments?id=eq.${cId}`, {
+                method: 'DELETE',
+                headers: { 'apikey': db.key, 'Authorization': `Bearer ${db.key}` }
+              });
+            } catch (delErr) {
+              console.error('[Supabase delete comment] Error:', delErr);
+            }
           }
         }
 
@@ -477,21 +485,27 @@ export default async function handler(req, res) {
         await savePersistentState(db, state);
 
         if (db.type === 'supabase') {
-          fetch(`${db.url}/rest/v1/thoughts`, {
-            method: 'POST',
-            headers: {
-              'apikey': db.key,
-              'Authorization': `Bearer ${db.key}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              id: newId,
-              title: newThought.title,
-              content: newThought.content,
-              category: newThought.category,
-              likes_count: 0
-            })
-          }).catch(() => {});
+          try {
+            await fetch(`${db.url}/rest/v1/thoughts`, {
+              method: 'POST',
+              headers: {
+                'apikey': db.key,
+                'Authorization': `Bearer ${db.key}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+              },
+              body: JSON.stringify({
+                id: newId,
+                title: newThought.title,
+                content: newThought.content,
+                category: newThought.category,
+                author: newThought.author,
+                likes_count: 0
+              })
+            });
+          } catch (supErr) {
+            console.error('[Supabase insert thought] Error:', supErr);
+          }
         }
 
         const mergedThoughts = mergeEntries(INITIAL_ENTRIES, state.thoughts, state.deletedIds);
@@ -538,19 +552,24 @@ export default async function handler(req, res) {
         await savePersistentState(db, state);
 
         if (db.type === 'supabase') {
-          fetch(`${db.url}/rest/v1/comments`, {
-            method: 'POST',
-            headers: {
-              'apikey': db.key,
-              'Authorization': `Bearer ${db.key}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              id: newComment.id,
-              thought_id: tId,
-              content: newComment.text
-            })
-          }).catch(() => {});
+          try {
+            await fetch(`${db.url}/rest/v1/comments`, {
+              method: 'POST',
+              headers: {
+                'apikey': db.key,
+                'Authorization': `Bearer ${db.key}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+              },
+              body: JSON.stringify({
+                id: newComment.id,
+                thought_id: tId,
+                content: newComment.text
+              })
+            });
+          } catch (supErr) {
+            console.error('[Supabase insert comment] Error:', supErr);
+          }
         }
 
         const mergedThoughts = mergeEntries(INITIAL_ENTRIES, state.thoughts, state.deletedIds);
@@ -596,21 +615,26 @@ export default async function handler(req, res) {
         await savePersistentState(db, state);
 
         if (db.type === 'supabase') {
-          if (hasLiked) {
-            fetch(`${db.url}/rest/v1/likes?thought_id=eq.${tId}&voter_id=eq.${vId}`, {
-              method: 'DELETE',
-              headers: { 'apikey': db.key, 'Authorization': `Bearer ${db.key}` }
-            }).catch(() => {});
-          } else {
-            fetch(`${db.url}/rest/v1/likes`, {
-              method: 'POST',
-              headers: {
-                'apikey': db.key,
-                'Authorization': `Bearer ${db.key}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ thought_id: tId, voter_id: vId })
-            }).catch(() => {});
+          try {
+            if (hasLiked) {
+              await fetch(`${db.url}/rest/v1/likes?thought_id=eq.${tId}&voter_id=eq.${vId}`, {
+                method: 'DELETE',
+                headers: { 'apikey': db.key, 'Authorization': `Bearer ${db.key}` }
+              });
+            } else {
+              await fetch(`${db.url}/rest/v1/likes`, {
+                method: 'POST',
+                headers: {
+                  'apikey': db.key,
+                  'Authorization': `Bearer ${db.key}`,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify({ thought_id: tId, voter_id: vId })
+              });
+            }
+          } catch (supErr) {
+            console.error('[Supabase toggle like] Error:', supErr);
           }
         }
 

@@ -24,10 +24,14 @@ create table if not exists thoughts (
   id text default gen_random_uuid()::text primary key,
   title text not null check (char_length(title) between 1 and 200),
   content text not null check (char_length(content) between 1 and 5000),
+  author text default 'absurdharsh',
   category text default 'thought',
   likes_count int default 0 not null,
   created_at timestamptz default now() not null
 );
+
+-- Migration safety: ensure author column exists if table was created previously
+alter table thoughts add column if not exists author text default 'absurdharsh';
 
 -- 3. Anonymous Comments table (thought_id is TEXT for universal compatibility)
 create table if not exists comments (

@@ -176,7 +176,7 @@ export default function JournalEntryCard({
       </div>
 
       {/* Bottom Footer Actions */}
-      <div className="mt-8 pt-4 flex items-center justify-between font-handwritten text-base sm:text-lg">
+      <div className="mt-8 pt-4 flex flex-wrap items-center justify-between gap-y-2 font-handwritten text-base sm:text-lg">
         <div className="flex items-center gap-5 sm:gap-6 flex-wrap">
           {/* Subtle Hand-Drawn Heart Like Trigger (Real-only likes, one per user) */}
           <button
@@ -237,9 +237,18 @@ export default function JournalEntryCard({
           </button>
         </div>
 
-        <span className="text-ink/40 dark:text-darkInk/40">
-          folio {index + 1} of {total}
-        </span>
+        {/* Right Meta: Inscribed By Author beside Folio Text in the Same Handwritten Font */}
+        <div className="flex items-center gap-2 sm:gap-3 text-ink/50 dark:text-darkInk/50 select-none">
+          {entry.author && (
+            <span className="text-ink/70 dark:text-darkInk/70">
+              — {entry.author.replace(/^[-—]\s*/, '')}
+            </span>
+          )}
+          {entry.author && <span className="opacity-30">&middot;</span>}
+          <span className="text-ink/40 dark:text-darkInk/40">
+            folio {index + 1} of {total}
+          </span>
+        </div>
       </div>
 
       {/* Collapsible Anonymous Comments Drawer */}
