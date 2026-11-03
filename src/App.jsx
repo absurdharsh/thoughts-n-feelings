@@ -384,10 +384,11 @@ export default function App() {
   // Prepend to top immediately and persist via /api/store
   const handleSaveEntry = async (newEntry) => {
     const thoughtId = String(newEntry.id || `thought_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`);
+    const nextNumber = String(entries.length + 1).padStart(2, '0');
     const formatted = {
       ...newEntry,
       id: thoughtId,
-      number: newEntry.number || '00',
+      number: newEntry.number || nextNumber,
       type: newEntry.type || newEntry.category || 'thought',
       category: newEntry.category || newEntry.type || 'thought',
       title: String(newEntry.title || ''),

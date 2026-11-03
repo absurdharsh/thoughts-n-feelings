@@ -46,6 +46,27 @@ export default function DigitalBookLayout({
     });
   };
 
+  // Canonical chronological numbering based on contribution recency:
+  // The earliest contribution is #01, the next is #02, ..., and the most recent contribution gets the next number available (#10, #11, etc.).
+  const entryNumberMap = useMemo(() => {
+    const sorted = [...entries].sort((a, b) => {
+      const timeA = typeof a.createdAt === 'number'
+        ? a.createdAt
+        : (a.id && String(a.id).startsWith('entry-') ? parseInt(String(a.id).replace('entry-', ''), 10) || 0 : 0);
+      const timeB = typeof b.createdAt === 'number'
+        ? b.createdAt
+        : (b.id && String(b.id).startsWith('entry-') ? parseInt(String(b.id).replace('entry-', ''), 10) || 0 : 0);
+      if (timeA !== timeB) return timeA - timeB;
+      return String(a.id).localeCompare(String(b.id));
+    });
+
+    const map = new Map();
+    sorted.forEach((entry, idx) => {
+      map.set(String(entry.id), String(idx + 1).padStart(2, '0'));
+    });
+    return map;
+  }, [entries]);
+
   // Dynamic sorting (Newest, Oldest, or Most Popular) and category/search filtering
   const filteredEntries = useMemo(() => {
     const list = [...entries];
@@ -217,11 +238,13 @@ export default function DigitalBookLayout({
             const entryComments = getCommentsForEntry(comments, entry);
             const isCommentsOpen = activeCommentEntryId === entry.id;
             const isDimmed = Boolean(activeCommentEntryId && activeCommentEntryId !== entry.id);
+            const assignedNumber = entryNumberMap.get(String(entry.id)) || entry.number || String(index + 1).padStart(2, '0');
 
             return (
               <JournalEntryCard
                 key={entry.id || index}
                 entry={entry}
+                assignedNumber={assignedNumber}
                 index={index}
                 total={filteredEntries.length}
                 isOwner={isOwner}

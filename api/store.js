@@ -468,9 +468,11 @@ export default async function handler(req, res) {
       try {
         const state = await loadPersistentState(db);
         const newId = String(thought?.id || Date.now());
+        const mergedExisting = mergeEntries(INITIAL_ENTRIES, state.thoughts, state.deletedIds);
+        const nextNumber = String(mergedExisting.length + 1).padStart(2, '0');
         const newThought = {
           id: newId,
-          number: thought?.number || '00',
+          number: thought?.number && thought?.number !== '00' ? thought.number : nextNumber,
           title: String(thought?.title || '').slice(0, 200),
           content: String(thought?.content || '').slice(0, 5000),
           category: String(thought?.category || thought?.type || 'thought'),
