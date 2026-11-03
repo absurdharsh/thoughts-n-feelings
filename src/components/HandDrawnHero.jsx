@@ -1,4 +1,5 @@
 import React from 'react';
+import InteractiveHeroIllustration from './InteractiveHeroIllustration';
 import {
   DoodleArrowDown,
   DoodleQuill,
@@ -79,8 +80,11 @@ export default function HandDrawnHero({
           .
         </p>
 
+        {/* Hand-Drawn Specimen: Two in Embrace (Interactive Pose Scrubbing) */}
+        <InteractiveHeroIllustration isDark={isDark} />
+
         {/* Scroll Trigger Naked Link */}
-        <div className="pt-8 flex justify-center">
+        <div className="pt-4 flex justify-center">
           <button
             type="button"
             onClick={onScrollToLedger}

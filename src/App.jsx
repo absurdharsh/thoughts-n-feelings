@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import SmoothScrollProvider from './components/SmoothScrollProvider';
+import ScribblePreloader from './components/ScribblePreloader';
 import HandDrawnHero from './components/HandDrawnHero';
 import DigitalBookLayout from './components/DigitalBookLayout';
 import RetroStatusBar from './components/RetroStatusBar';
@@ -67,6 +68,7 @@ export default function App() {
   );
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showPreloader, setShowPreloader] = useState(true);
 
   // Secret Owner Session (verified on the server via /api/store)
   const [isOwner, setIsOwner] = useState(checkOwnerUnlocked);
@@ -424,6 +426,14 @@ export default function App() {
 
   return (
     <SmoothScrollProvider>
+      {/* Scribble Drawing Preloader (Draws "Two in Embrace" and Curtain-Wipes) */}
+      {showPreloader && (
+        <ScribblePreloader
+          isDark={isDark}
+          onComplete={() => setShowPreloader(false)}
+        />
+      )}
+
       <div className="relative min-h-screen bg-paper dark:bg-darkPaper text-ink dark:text-darkInk transition-colors duration-200 selection:bg-ink selection:text-paper dark:selection:bg-darkInk dark:selection:text-darkPaper flex flex-col justify-between">
         
         {/* Main Sketchbook Body */}
