@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   DoodleSpiral,
   DoodleSpark,
@@ -57,6 +57,12 @@ export default function JournalEntryCard({
   const [isEditing, setIsEditing] = useState(false);
   const [editAuthor, setEditAuthor] = useState(entry.author || '');
   const [editDate, setEditDate] = useState(entry.date || displayDate || '');
+
+  // Keep edit inputs synchronized when entry metadata updates
+  useEffect(() => {
+    setEditAuthor(entry.author || '');
+    setEditDate(entry.date || displayDate || '');
+  }, [entry.author, entry.date, displayDate]);
 
   const handleSaveMeta = (e) => {
     if (e) e.preventDefault();

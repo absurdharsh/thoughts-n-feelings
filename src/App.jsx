@@ -36,7 +36,11 @@ function checkOwnerUnlocked() {
 // Retrieve stored owner passkey for server-side verification
 function getStoredOwnerPasskey() {
   try {
-    return (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('tf_owner_passkey')) || '';
+    return (
+      (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('tf_owner_passkey')) ||
+      (typeof localStorage !== 'undefined' && localStorage.getItem('tf_owner_passkey')) ||
+      ''
+    );
   } catch {
     return '';
   }
@@ -61,12 +65,12 @@ export default function App() {
     }
   });
 
-  // Unified persistent database state: thoughts, comments, likes, deletedIds
+  // Unified persistent database state: thoughts, thoughtOverrides, comments, likes, deletedIds
   const [dbState, setDbState] = useState(() => getLocalState());
 
-  // Combined entries (INITIAL_ENTRIES + dynamic cloud thoughts, filtered by deletedIds)
+  // Combined entries (INITIAL_ENTRIES + dynamic cloud thoughts, filtered by deletedIds, with thoughtOverrides applied)
   const [entries, setEntries] = useState(() =>
-    mergeEntries(INITIAL_ENTRIES, dbState.thoughts, dbState.deletedIds)
+    mergeEntries(INITIAL_ENTRIES, dbState.thoughts, dbState.deletedIds, dbState.thoughtOverrides)
   );
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -93,7 +97,7 @@ export default function App() {
       const fresh = await fetchStore();
       if (fresh && fresh.persistent !== false) {
         setDbState(fresh);
-        setEntries(mergeEntries(INITIAL_ENTRIES, fresh.thoughts, fresh.deletedIds));
+        setEntries(mergeEntries(INITIAL_ENTRIES, fresh.thoughts, fresh.deletedIds, fresh.thoughtOverrides));
       }
     } catch (err) {
       console.warn('[Sync] Error syncing /api/store:', err);
@@ -177,6 +181,7 @@ export default function App() {
         const lock = window.confirm('Owner mode is currently active. Would you like to lock it?');
         if (lock) {
           sessionStorage.removeItem('tf_owner_passkey');
+          localStorage.removeItem('tf_owner_passkey');
           sessionStorage.removeItem('tf_owner_unlocked');
           localStorage.removeItem('tf_owner_unlocked');
           setIsOwner(false);
@@ -192,6 +197,7 @@ export default function App() {
         const valid = await verifyOwnerApi(input);
         if (valid) {
           sessionStorage.setItem('tf_owner_passkey', input.trim());
+          localStorage.setItem('tf_owner_passkey', input.trim());
           sessionStorage.setItem('tf_owner_unlocked', 'true');
           localStorage.setItem('tf_owner_unlocked', 'true');
           setIsOwner(true);
@@ -244,6 +250,7 @@ export default function App() {
       }
       passkey = input.trim();
       sessionStorage.setItem('tf_owner_passkey', passkey);
+      localStorage.setItem('tf_owner_passkey', passkey);
       sessionStorage.setItem('tf_owner_unlocked', 'true');
       localStorage.setItem('tf_owner_unlocked', 'true');
       setIsOwner(true);
@@ -259,10 +266,13 @@ export default function App() {
       delete nextComments[targetId];
       const nextLikes = { ...prev.likes };
       delete nextLikes[targetId];
+      const nextOverrides = { ...(prev.thoughtOverrides || {}) };
+      delete nextOverrides[targetId];
 
       const next = {
         ...prev,
         thoughts,
+        thoughtOverrides: nextOverrides,
         deletedIds,
         comments: nextComments,
         likes: nextLikes
@@ -275,7 +285,7 @@ export default function App() {
     const updated = await ownerDeleteApi({ thoughtId: targetId, passkey });
     if (updated && updated.persistent !== false) {
       setDbState(updated);
-      setEntries(mergeEntries(INITIAL_ENTRIES, updated.thoughts, updated.deletedIds));
+      setEntries(mergeEntries(INITIAL_ENTRIES, updated.thoughts, updated.deletedIds, updated.thoughtOverrides));
     }
   };
 
@@ -294,10 +304,18 @@ export default function App() {
       }
       passkey = input.trim();
       sessionStorage.setItem('tf_owner_passkey', passkey);
+      localStorage.setItem('tf_owner_passkey', passkey);
       sessionStorage.setItem('tf_owner_unlocked', 'true');
       localStorage.setItem('tf_owner_unlocked', 'true');
       setIsOwner(true);
     }
+
+    const cleanUpdates = {
+      ...(updates.author !== undefined ? { author: String(updates.author).trim() || 'absurdharsh' } : {}),
+      ...(updates.date !== undefined ? { date: String(updates.date).trim() } : {}),
+      ...(updates.title !== undefined ? { title: String(updates.title).trim() } : {}),
+      ...(updates.content !== undefined ? { content: String(updates.content).trim() } : {})
+    };
 
     // 1. Optimistic local update
     setEntries((prev) =>
@@ -305,9 +323,7 @@ export default function App() {
         if (String(item.id) === targetId) {
           return {
             ...item,
-            ...updates,
-            author: updates.author !== undefined ? String(updates.author).trim() || 'absurdharsh' : item.author,
-            date: updates.date !== undefined ? String(updates.date).trim() : item.date
+            ...cleanUpdates
           };
         }
         return item;
@@ -315,15 +331,21 @@ export default function App() {
     );
 
     setDbState((prev) => {
+      const nextOverrides = {
+        ...(prev.thoughtOverrides || {}),
+        [targetId]: {
+          ...((prev.thoughtOverrides && prev.thoughtOverrides[targetId]) || {}),
+          ...cleanUpdates
+        }
+      };
+
       let found = false;
-      const thoughts = prev.thoughts.map((item) => {
+      const thoughts = (prev.thoughts || []).map((item) => {
         if (String(item.id) === targetId) {
           found = true;
           return {
             ...item,
-            ...updates,
-            author: updates.author !== undefined ? String(updates.author).trim() || 'absurdharsh' : item.author,
-            date: updates.date !== undefined ? String(updates.date).trim() : item.date
+            ...cleanUpdates
           };
         }
         return item;
@@ -334,24 +356,22 @@ export default function App() {
         if (init) {
           thoughts.push({
             ...init,
-            ...updates,
-            id: targetId,
-            author: updates.author !== undefined ? String(updates.author).trim() || 'absurdharsh' : init.author,
-            date: updates.date !== undefined ? String(updates.date).trim() : init.date
+            ...cleanUpdates,
+            id: targetId
           });
         }
       }
 
-      const next = { ...prev, thoughts };
+      const next = { ...prev, thoughts, thoughtOverrides: nextOverrides };
       saveLocalState(next);
       return next;
     });
 
     // 2. Persist update in /api/store
-    const updated = await ownerUpdateThoughtApi({ thoughtId: targetId, updates, passkey });
+    const updated = await ownerUpdateThoughtApi({ thoughtId: targetId, updates: cleanUpdates, passkey });
     if (updated && updated.persistent !== false) {
       setDbState(updated);
-      setEntries(mergeEntries(INITIAL_ENTRIES, updated.thoughts, updated.deletedIds));
+      setEntries(mergeEntries(INITIAL_ENTRIES, updated.thoughts, updated.deletedIds, updated.thoughtOverrides));
     }
   };
 
@@ -361,10 +381,10 @@ export default function App() {
       const fresh = await fetchStore();
       if (fresh && fresh.persistent !== false) {
         setDbState(fresh);
-        setEntries(mergeEntries(INITIAL_ENTRIES, fresh.thoughts, fresh.deletedIds));
+        setEntries(mergeEntries(INITIAL_ENTRIES, fresh.thoughts, fresh.deletedIds, fresh.thoughtOverrides));
       }
     } catch (err) {
-      console.warn('[Comments] Error refreshing comments on open:', err);
+      console.warn('[Comments] Error fetching fresh comments from remote:', err);
     }
   }, []);
 
@@ -494,7 +514,7 @@ export default function App() {
     const updated = await addThoughtApi(formatted);
     if (updated && updated.persistent !== false) {
       setDbState(updated);
-      setEntries(mergeEntries(INITIAL_ENTRIES, updated.thoughts, updated.deletedIds));
+      setEntries(mergeEntries(INITIAL_ENTRIES, updated.thoughts, updated.deletedIds, updated.thoughtOverrides));
     }
   };
 

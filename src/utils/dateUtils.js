@@ -42,12 +42,12 @@ export function formatEntryDate(entry) {
 
   const rawDate = typeof entry.date === 'string' ? entry.date.trim() : '';
 
-  // Preserve intentional handcrafted poetic timestamps from initial thoughts
-  const poeticDates = ['late night', 'midnight', '1934', 'dusk'];
-  if (rawDate && poeticDates.includes(rawDate.toLowerCase())) {
+  // 1. If an explicit date has been set (by author, admin, or initial thoughts) and is not 'Just Now', respect it directly!
+  if (rawDate && rawDate.toLowerCase() !== 'just now') {
     return rawDate;
   }
 
+  // 2. Otherwise, resolve dynamically from the creation timestamp
   const timestamp = parseTimestamp(entry.createdAt) ||
     (entry.id && String(entry.id).startsWith('entry-')
       ? parseInt(String(entry.id).replace('entry-', ''), 10)
@@ -64,11 +64,6 @@ export function formatEntryDate(entry) {
 
     // After 30 minutes, display the season and year
     return getSeasonAndYear(timestamp);
-  }
-
-  // If raw date is already a season, keep it
-  if (rawDate && rawDate.toLowerCase() !== 'just now') {
-    return rawDate;
   }
 
   return getSeasonAndYear(Date.now());

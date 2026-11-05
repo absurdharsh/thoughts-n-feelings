@@ -16,7 +16,7 @@ alter table private_owner_config enable row level security;
 
 -- Set your secret owner password here (hashed with bcrypt on the server):
 insert into private_owner_config (id, password_hash)
-values (1, crypt('CHANGE_THIS_TO_YOUR_SECRET_PASSWORD', gen_salt('bf')))
+values (1, crypt('ilovefrankocean14', gen_salt('bf')))
 on conflict (id) do update set password_hash = excluded.password_hash;
 
 -- 2. Thoughts table (id is TEXT to support both static strings and generated UUIDs)
