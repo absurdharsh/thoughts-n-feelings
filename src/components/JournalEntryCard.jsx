@@ -8,6 +8,7 @@ import {
   DoodleEye,
   DoodleStar
 } from './HandDrawnDoodles';
+import { formatEntryDate, getEntryTooltipDate } from '../utils/dateUtils';
 
 // Helper to render the appropriate margin doodle
 function renderMarginDoodle(type) {
@@ -48,8 +49,11 @@ export default function JournalEntryCard({
   const [copied, setCopied] = useState(false);
   const [commentText, setCommentText] = useState('');
 
+  const displayDate = formatEntryDate(entry);
+  const dateTooltip = getEntryTooltipDate(entry);
+
   const handleCopy = () => {
-    const textToCopy = `“${entry.title}”\n\n${entry.content}\n\n— ${entry.author} (${entry.date})`;
+    const textToCopy = `“${entry.title}”\n\n${entry.content}\n\n— ${entry.author} (${displayDate})`;
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -130,8 +134,11 @@ export default function JournalEntryCard({
 
         <div className="flex items-center gap-2">
           {renderMarginDoodle(entry.doodle)}
-          <span className="font-editorial italic text-sm sm:text-base text-ink/50 dark:text-darkInk/50">
-            {entry.date}
+          <span 
+            className="font-editorial italic text-sm sm:text-base text-ink/50 dark:text-darkInk/50"
+            title={dateTooltip || displayDate}
+          >
+            {displayDate}
           </span>
         </div>
       </div>

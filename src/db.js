@@ -5,6 +5,7 @@
 
 export const API_STORE_URL = '/api/store';
 export const LOCAL_STORAGE_KEY = 'tf_shared_state_v2';
+import { getSeasonAndYear } from './utils/dateUtils';
 
 export function defaultState() {
   return {
@@ -31,7 +32,9 @@ export function normalizeState(raw) {
           category: String(t.category || t.type || 'thought'),
           type: String(t.type || t.category || 'thought'),
           author: String(t.author || 'absurdharsh'),
-          date: t.date || 'Just Now',
+          date: t.date && t.date.toLowerCase() !== 'just now'
+            ? t.date
+            : getSeasonAndYear(typeof t.createdAt === 'number' ? t.createdAt : Date.now()),
           doodle: t.doodle || (t.category === 'feeling' ? 'eye' : t.category === 'quote' ? 'spark' : 'star'),
           createdAt: typeof t.createdAt === 'number' ? t.createdAt : Date.now()
         }))

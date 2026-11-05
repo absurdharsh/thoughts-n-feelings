@@ -7,6 +7,7 @@ import RetroStatusBar from './components/RetroStatusBar';
 import HandDrawnThoughtModal from './components/HandDrawnThoughtModal';
 import { INITIAL_ENTRIES } from './data/initialThoughts';
 import { getPersistentVoterId } from './utils/voterId';
+import { getSeasonAndYear } from './utils/dateUtils';
 import {
   getLocalState,
   saveLocalState,
@@ -393,7 +394,9 @@ export default function App() {
       category: newEntry.category || newEntry.type || 'thought',
       title: String(newEntry.title || ''),
       author: String(newEntry.author || 'absurdharsh'),
-      date: newEntry.date || 'Just Now',
+      date: newEntry.date && newEntry.date.toLowerCase() !== 'just now'
+        ? newEntry.date
+        : getSeasonAndYear(newEntry.createdAt || Date.now()),
       createdAt: typeof newEntry.createdAt === 'number' ? newEntry.createdAt : Date.now(),
       doodle: newEntry.doodle || (newEntry.category === 'feeling' ? 'eye' : newEntry.category === 'quote' ? 'spark' : 'star'),
       content: String(newEntry.content || '')

@@ -6,6 +6,7 @@ import {
   DoodleEye,
   DoodleSpark
 } from './HandDrawnDoodles';
+import { getSeasonAndYear } from '../utils/dateUtils';
 
 export default function HandDrawnThoughtModal({ isOpen, onClose, onSaveEntry }) {
   const [title, setTitle] = useState('');
@@ -25,7 +26,7 @@ export default function HandDrawnThoughtModal({ isOpen, onClose, onSaveEntry }) 
       type,
       title: title.trim(),
       author: author.trim() || 'absurdharsh',
-      date: 'Just Now',
+      date: getSeasonAndYear(Date.now()),
       createdAt: Date.now(),
       doodle,
       content: content.trim(),

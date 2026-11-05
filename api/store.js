@@ -6,6 +6,7 @@
 
 import crypto from 'node:crypto';
 import { INITIAL_ENTRIES } from '../src/data/initialThoughts.js';
+import { getSeasonAndYear } from '../src/utils/dateUtils.js';
 
 const REDIS_KEY = 'tf_global_store_v1';
 const OWNER_PASSKEY_HASH = 'acf7001eb827b019664b5f194d8969ed537f78d95117b0928d7eed0a6fec242d';
@@ -33,7 +34,9 @@ function normalizeState(raw) {
           category: String(t.category || t.type || 'thought'),
           type: String(t.type || t.category || 'thought'),
           author: String(t.author || 'absurdharsh'),
-          date: t.date || 'Just Now',
+          date: t.date && t.date.toLowerCase() !== 'just now'
+            ? t.date
+            : getSeasonAndYear(typeof t.createdAt === 'number' ? t.createdAt : Date.now()),
           doodle: t.doodle || (t.category === 'feeling' ? 'eye' : t.category === 'quote' ? 'spark' : 'star'),
           createdAt: typeof t.createdAt === 'number' ? t.createdAt : Date.now()
         }))
@@ -249,7 +252,7 @@ async function supabaseFetchStore(db) {
     category: String(t.category || 'thought'),
     type: String(t.category || 'thought'),
     author: String(t.author || 'absurdharsh'),
-    date: 'Just Now',
+    date: getSeasonAndYear(new Date(t.created_at).getTime()),
     createdAt: new Date(t.created_at).getTime()
   }));
 
@@ -478,7 +481,9 @@ export default async function handler(req, res) {
           category: String(thought?.category || thought?.type || 'thought'),
           type: String(thought?.type || thought?.category || 'thought'),
           author: String(thought?.author || 'absurdharsh'),
-          date: thought?.date || 'Just Now',
+          date: thought?.date && thought?.date.toLowerCase() !== 'just now'
+            ? thought.date
+            : getSeasonAndYear(typeof thought?.createdAt === 'number' ? thought.createdAt : Date.now()),
           doodle: thought?.doodle || (thought?.category === 'feeling' ? 'eye' : thought?.category === 'quote' ? 'spark' : 'star'),
           createdAt: typeof thought?.createdAt === 'number' ? thought.createdAt : Date.now()
         };
