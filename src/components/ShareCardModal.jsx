@@ -158,14 +158,74 @@ export default function ShareCardModal({
   const charCount = rawContent.length;
   const paragraphs = rawContent.split('\n\n').filter(Boolean);
 
-  const bodySizeClass =
-    charCount > 450
-      ? 'text-xs sm:text-sm leading-[1.65]'
-      : charCount > 250
-      ? 'text-sm sm:text-base leading-[1.7]'
-      : 'text-base sm:text-lg leading-[1.75]';
-
   const cleanTitle = entry.title.replace(/^["“]|["”]$/g, '').trim();
+
+  // 1. Dynamic Heading Scaling (Based on Title Length)
+  // Short Titles (1–22 chars): Large, bold statement size (32px–36px)
+  // Medium Titles (23–45 chars): Slightly stepped-down size (26px–30px)
+  // Long Titles (46+ chars): Capped at strict minimum floor (never smaller than 22px–24px)
+  const isSquare = aspectRatio === 'square';
+  const titleLen = cleanTitle.length;
+  const bodyLen = charCount;
+
+  let headingSize;
+  if (titleLen <= 22) {
+    headingSize = isSquare && bodyLen > 250 ? 30 : 34;
+  } else if (titleLen <= 45) {
+    headingSize = isSquare && bodyLen > 250 ? 25 : 28;
+  } else {
+    headingSize = 23;
+  }
+
+  // 2. Dynamic Body Scaling (Based on Body Character Length)
+  // Short / Punchy Quotes (under 100 chars): Generous font size (22px–24px), relaxed line spacing (1.75)
+  // Medium Thoughts (100–280 chars): Balanced reading size (18px–20px), comfortable line spacing (1.65)
+  // Long Reflections (280–600+ chars): Step down gently (15px–17px, never smaller than 15px), line spacing (1.5)
+  let bodySize;
+  let bodyLineHeight;
+  if (bodyLen < 100) {
+    bodySize = isSquare ? 21 : 23;
+    bodyLineHeight = 1.75;
+  } else if (bodyLen <= 280) {
+    bodySize = isSquare ? 17 : 19;
+    bodyLineHeight = 1.65;
+  } else {
+    bodySize = isSquare ? 15 : 16;
+    bodyLineHeight = 1.5;
+  }
+
+  // Strict minimum floors
+  headingSize = Math.max(22, headingSize);
+  bodySize = Math.max(15, bodySize);
+
+  // 3. Contrast Ratio: Heading must always remain at least 1.35x larger than body font size
+  if (headingSize < bodySize * 1.35) {
+    const maxAllowedBody = Math.floor(headingSize / 1.35);
+    if (maxAllowedBody >= 15) {
+      bodySize = maxAllowedBody;
+    } else {
+      headingSize = Math.round(bodySize * 1.35);
+    }
+  }
+
+  // Author signature size proportional to body
+  const authorSize = Math.max(14, Math.round(bodySize * 0.95));
+
+  // 4. Proportional Gaps
+  // Enforce a dedicated minimum vertical gap (24px to 32px) between heading and body
+  let headingToBodyGap;
+  let bodyToAuthorGap;
+
+  if (bodyLen < 100 && titleLen <= 22) {
+    headingToBodyGap = isSquare ? 26 : 30; // 28px–32px
+    bodyToAuthorGap = isSquare ? 16 : 20;
+  } else if (bodyLen > 280 || (isSquare && bodyLen > 180)) {
+    headingToBodyGap = isSquare ? 20 : 24; // 20px–24px
+    bodyToAuthorGap = isSquare ? 12 : 16;
+  } else {
+    headingToBodyGap = isSquare ? 24 : 28; // 24px–28px
+    bodyToAuthorGap = isSquare ? 14 : 18;
+  }
 
   return (
     <div
@@ -275,11 +335,13 @@ export default function ShareCardModal({
             className={`relative shadow-xl border border-current/15 select-none box-border ${
               aspectRatio === 'story'
                 ? 'pt-8 pb-9 px-7' // Instagram Story safe margins: ~80px top, ~96px bottom, ~56px side in 3x scale
+                : bodyLen > 250
+                ? 'px-7 py-5' // Reduced outer vertical margins for long reflections in square format
                 : 'p-7' // Square post balanced margins
             }`}
           >
             {/* Top Header: Category Only on Left, Season + Margin Doodle on Right */}
-            <header className="w-full flex items-center justify-between pb-2">
+            <header className="w-full flex items-center justify-between pb-2 flex-shrink-0">
               {/* Category Label in Clean Tracked-out Uppercase Monospace */}
               <div className="flex items-center">
                 <span className="font-mono text-xs uppercase tracking-[0.25em] opacity-80 font-semibold">
@@ -299,31 +361,73 @@ export default function ShareCardModal({
             </header>
 
             {/* Central Hero Block: Vertically Centered Title, Body & Direct Author Signature */}
-            <main className="my-auto py-2 flex flex-col justify-center">
-              {/* Confident Italic Serif Title with Curly Quotes */}
-              <h4 className="font-editorial italic text-2xl sm:text-3xl font-bold tracking-tight leading-[1.25] mb-4 break-words">
+            <main
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                flex: '1 1 auto',
+                minHeight: 0,
+                boxSizing: 'border-box'
+              }}
+              className="w-full my-auto py-1"
+            >
+              {/* Confident Italic Serif Title with Clean 1.25 Line-Height & Guaranteed Minimum Flow Gap */}
+              <h4
+                style={{
+                  fontSize: `${headingSize}px`,
+                  lineHeight: 1.25,
+                  margin: 0,
+                  marginBottom: `${headingToBodyGap}px`,
+                  display: 'block',
+                  width: '100%',
+                  wordBreak: 'break-word',
+                  boxSizing: 'border-box'
+                }}
+                className="font-editorial italic font-bold tracking-tight"
+              >
                 “{cleanTitle}”
               </h4>
 
-              {/* Body Thought with Warm Natural Line Height */}
-              <div className={`font-body ${bodySizeClass} opacity-90 space-y-2.5`}>
+              {/* Body Thought with Dynamic Size, Proportional Line Spacing & Sequential Natural Flow */}
+              <div
+                style={{
+                  fontSize: `${bodySize}px`,
+                  lineHeight: bodyLineHeight,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: bodyLen > 280 ? '8px' : '10px',
+                  boxSizing: 'border-box'
+                }}
+                className="font-body opacity-90"
+              >
                 {paragraphs.map((para, i) => (
-                  <p key={i} className="break-words">
+                  <p key={i} style={{ margin: 0, padding: 0 }} className="break-words">
                     {para}
                   </p>
                 ))}
               </div>
 
-              {/* Author Signature Directly Below Thought Body */}
-              <div className="mt-3.5 pt-0.5">
-                <span className="font-editorial italic text-base sm:text-lg font-bold opacity-90">
+              {/* Author Signature Directly Below Thought Body with Proportional Gap */}
+              <div
+                style={{
+                  marginTop: `${bodyToAuthorGap}px`,
+                  boxSizing: 'border-box'
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: `${authorSize}px`
+                  }}
+                  className="font-editorial italic font-bold opacity-90 inline-block"
+                >
                   — {authorName}
                 </span>
               </div>
             </main>
 
             {/* Bottom Footer: thoughts 'n' feelings Centered Cleanly Below Faint Divider Line */}
-            <footer className="pt-3 border-t border-current/15 flex items-center justify-center">
+            <footer className="pt-3 border-t border-current/15 flex items-center justify-center flex-shrink-0">
               <span className="text-[10px] sm:text-[11px] opacity-45 tracking-[0.25em] font-mono uppercase select-none text-center">
                 thoughts 'n' feelings
               </span>
