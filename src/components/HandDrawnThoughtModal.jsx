@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   DoodleQuill,
+  DoodlePenNib,
   DoodleStar,
   DoodleSpiral,
   DoodleEye,
@@ -242,13 +243,14 @@ export default function HandDrawnThoughtModal({ isOpen, onClose, onSaveEntry }) 
                 <button
                   type="button"
                   onClick={() => setDoodleMode('custom')}
-                  className={`cursor-pointer px-1.5 py-0.5 rounded transition-all ${
+                  className={`cursor-pointer px-1.5 py-0.5 rounded transition-all inline-flex items-center gap-1.5 ${
                     doodleMode === 'custom'
                       ? 'border-b-2 border-ink dark:border-darkInk font-bold opacity-100'
                       : 'opacity-50 hover:opacity-100'
                   }`}
                 >
-                  draw your own ✍
+                  <DoodlePenNib className="w-3.5 h-3.5 text-ink dark:text-darkInk inline-block" />
+                  <span>sketch your own</span>
                 </button>
               </div>
             </div>

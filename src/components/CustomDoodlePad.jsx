@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { DoodlePenNib } from './HandDrawnDoodles';
 
 /**
  * CustomDoodlePad — 120x120 Binary Ink Drawing Pad
@@ -169,25 +170,26 @@ export default function CustomDoodlePad({ onDoodleChange, initialDataUrl = '' })
           <button
             type="button"
             onClick={() => setTool('pen')}
-            className={`px-2 py-0.5 border text-xs transition-colors cursor-pointer ${
+            className={`px-2 py-0.5 border text-xs transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
               tool === 'pen'
                 ? 'border-ink dark:border-darkInk bg-ink text-paper dark:bg-darkInk dark:text-darkPaper font-bold'
                 : 'border-ink/30 dark:border-darkInk/30 hover:border-ink dark:hover:border-darkInk opacity-70 hover:opacity-100'
             }`}
           >
-            ✍ pen
+            <DoodlePenNib className="w-3 h-3 text-current inline-block" />
+            <span>pen</span>
           </button>
 
           <button
             type="button"
             onClick={() => setTool('eraser')}
-            className={`px-2 py-0.5 border text-xs transition-colors cursor-pointer ${
+            className={`px-2 py-0.5 border text-xs transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
               tool === 'eraser'
                 ? 'border-ink dark:border-darkInk bg-ink text-paper dark:bg-darkInk dark:text-darkPaper font-bold'
                 : 'border-ink/30 dark:border-darkInk/30 hover:border-ink dark:hover:border-darkInk opacity-70 hover:opacity-100'
             }`}
           >
-            ⌫ eraser
+            <span>eraser</span>
           </button>
 
           <button
