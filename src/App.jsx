@@ -17,6 +17,7 @@ import {
   toggleLikeApi,
   verifyOwnerApi,
   ownerDeleteApi,
+  ownerUpdateThoughtApi,
   mergeEntries
 } from './db';
 
@@ -278,6 +279,82 @@ export default function App() {
     }
   };
 
+  // Owner edit entry metadata (username/author, date/month/season):
+  const handleUpdateEntry = async (entryId, updates) => {
+    const targetId = String(entryId);
+    let passkey = getStoredOwnerPasskey();
+
+    if (!checkOwnerUnlocked() || !passkey) {
+      const input = window.prompt('Enter owner passkey to edit entry:');
+      if (!input) return;
+      const valid = await verifyOwnerApi(input);
+      if (!valid) {
+        window.alert('Invalid passkey.');
+        return;
+      }
+      passkey = input.trim();
+      sessionStorage.setItem('tf_owner_passkey', passkey);
+      sessionStorage.setItem('tf_owner_unlocked', 'true');
+      localStorage.setItem('tf_owner_unlocked', 'true');
+      setIsOwner(true);
+    }
+
+    // 1. Optimistic local update
+    setEntries((prev) =>
+      prev.map((item) => {
+        if (String(item.id) === targetId) {
+          return {
+            ...item,
+            ...updates,
+            author: updates.author !== undefined ? String(updates.author).trim() || 'absurdharsh' : item.author,
+            date: updates.date !== undefined ? String(updates.date).trim() : item.date
+          };
+        }
+        return item;
+      })
+    );
+
+    setDbState((prev) => {
+      let found = false;
+      const thoughts = prev.thoughts.map((item) => {
+        if (String(item.id) === targetId) {
+          found = true;
+          return {
+            ...item,
+            ...updates,
+            author: updates.author !== undefined ? String(updates.author).trim() || 'absurdharsh' : item.author,
+            date: updates.date !== undefined ? String(updates.date).trim() : item.date
+          };
+        }
+        return item;
+      });
+
+      if (!found) {
+        const init = INITIAL_ENTRIES.find((item) => String(item.id) === targetId);
+        if (init) {
+          thoughts.push({
+            ...init,
+            ...updates,
+            id: targetId,
+            author: updates.author !== undefined ? String(updates.author).trim() || 'absurdharsh' : init.author,
+            date: updates.date !== undefined ? String(updates.date).trim() : init.date
+          });
+        }
+      }
+
+      const next = { ...prev, thoughts };
+      saveLocalState(next);
+      return next;
+    });
+
+    // 2. Persist update in /api/store
+    const updated = await ownerUpdateThoughtApi({ thoughtId: targetId, updates, passkey });
+    if (updated && updated.persistent !== false) {
+      setDbState(updated);
+      setEntries(mergeEntries(INITIAL_ENTRIES, updated.thoughts, updated.deletedIds));
+    }
+  };
+
   // Fetch fresh comments from remote whenever a user opens a comment dropdown
   const handleOpenComments = useCallback(async () => {
     try {
@@ -456,6 +533,7 @@ export default function App() {
             onOpenNewEntryModal={() => setIsModalOpen(true)}
             isOwner={isOwner}
             onDeleteEntry={handleDeleteEntry}
+            onUpdateEntry={handleUpdateEntry}
             comments={dbState.comments}
             onAddComment={handleAddComment}
             onDeleteComment={handleDeleteComment}

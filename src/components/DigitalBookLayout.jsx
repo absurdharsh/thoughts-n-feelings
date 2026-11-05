@@ -8,6 +8,7 @@ export default function DigitalBookLayout({
   onOpenNewEntryModal,
   isOwner = false,
   onDeleteEntry,
+  onUpdateEntry,
   comments = {},
   onAddComment,
   onDeleteComment,
@@ -249,6 +250,7 @@ export default function DigitalBookLayout({
                 total={filteredEntries.length}
                 isOwner={isOwner}
                 onDeleteEntry={onDeleteEntry}
+                onUpdateEntry={onUpdateEntry}
                 comments={entryComments}
                 onAddComment={(text) => onAddComment && onAddComment(entry.id, text)}
                 onDeleteComment={(commentId) => onDeleteComment && onDeleteComment(entry.id, commentId)}

@@ -36,6 +36,7 @@ export default function JournalEntryCard({
   total,
   isOwner = false,
   onDeleteEntry,
+  onUpdateEntry,
   comments = [],
   onAddComment,
   onDeleteComment,
@@ -51,6 +52,22 @@ export default function JournalEntryCard({
 
   const displayDate = formatEntryDate(entry);
   const dateTooltip = getEntryTooltipDate(entry);
+
+  // Dev Control edit state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editAuthor, setEditAuthor] = useState(entry.author || '');
+  const [editDate, setEditDate] = useState(entry.date || displayDate || '');
+
+  const handleSaveMeta = (e) => {
+    if (e) e.preventDefault();
+    if (!onUpdateEntry) return;
+
+    onUpdateEntry(entry.id, {
+      author: editAuthor.trim() || 'absurdharsh',
+      date: editDate.trim() || displayDate
+    });
+    setIsEditing(false);
+  };
 
   const handleCopy = () => {
     const textToCopy = `“${entry.title}”\n\n${entry.content}\n\n— ${entry.author} (${displayDate})`;
@@ -130,18 +147,124 @@ export default function JournalEntryCard({
               [x]
             </button>
           )}
+          {isOwner && onUpdateEntry && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditAuthor(entry.author || '');
+                setEditDate(entry.date || displayDate);
+                setIsEditing((prev) => !prev);
+              }}
+              className="text-xs opacity-60 hover:opacity-100 text-blue-600 dark:text-blue-400 font-mono transition-opacity ml-1.5 cursor-pointer select-none"
+              title="Edit username and date (Dev control)"
+            >
+              {isEditing ? '[close]' : '[edit]'}
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
           {renderMarginDoodle(entry.doodle)}
           <span 
-            className="font-editorial italic text-sm sm:text-base text-ink/50 dark:text-darkInk/50"
-            title={dateTooltip || displayDate}
+            className={`font-editorial italic text-sm sm:text-base text-ink/50 dark:text-darkInk/50 ${
+              isOwner ? 'cursor-pointer hover:underline hover:text-blue-600 dark:hover:text-blue-400' : ''
+            }`}
+            title={isOwner ? 'Click to edit date/season (Dev control)' : (dateTooltip || displayDate)}
+            onClick={(e) => {
+              if (isOwner) {
+                e.stopPropagation();
+                setEditAuthor(entry.author || '');
+                setEditDate(entry.date || displayDate);
+                setIsEditing(true);
+              }
+            }}
           >
             {displayDate}
           </span>
         </div>
       </div>
+
+      {/* Dev Control: Inline Edit Panel for Username & Date */}
+      {isOwner && isEditing && (
+        <form
+          onSubmit={handleSaveMeta}
+          onClick={(e) => e.stopPropagation()}
+          className="mb-6 p-4 rounded bg-amber-500/10 border border-dashed border-amber-600/40 dark:border-amber-400/40 flex flex-col gap-3 font-handwritten select-none transition-all duration-200"
+        >
+          <div className="flex items-center justify-between text-xs text-amber-800 dark:text-amber-300 font-mono tracking-wider">
+            <span>[dev control · edit entry #{assignedNumber || entry.number}]</span>
+            <span className="opacity-60 text-[11px]">id: {entry.id}</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Username / Author field */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs uppercase tracking-wider text-ink/60 dark:text-darkInk/60">
+                username / author:
+              </label>
+              <input
+                type="text"
+                value={editAuthor}
+                onChange={(e) => setEditAuthor(e.target.value)}
+                placeholder="e.g. absurdharsh, ishika"
+                className="bg-transparent border-b border-ink/30 dark:border-darkInk/30 focus:border-ink dark:focus:border-darkInk outline-none px-1 py-1 font-handwritten text-base text-ink dark:text-darkInk"
+                autoFocus
+              />
+            </div>
+
+            {/* Date / Month / Season field */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs uppercase tracking-wider text-ink/60 dark:text-darkInk/60">
+                date / month / season:
+              </label>
+              <input
+                type="text"
+                value={editDate}
+                onChange={(e) => setEditDate(e.target.value)}
+                placeholder="e.g. Autumn 2026, November 2026"
+                className="bg-transparent border-b border-ink/30 dark:border-darkInk/30 focus:border-ink dark:focus:border-darkInk outline-none px-1 py-1 font-editorial italic text-base text-ink dark:text-darkInk"
+              />
+            </div>
+          </div>
+
+          {/* Quick presets for season and month */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs font-handwritten text-ink/60 dark:text-darkInk/60">
+            <span className="opacity-50">quick presets:</span>
+            {['Autumn 2026', 'Winter 2026', 'Spring 2027', 'Summer 2027', 'November 2026', 'Late Night', 'Midnight', 'Dusk'].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => setEditDate(preset)}
+                className="px-2 py-0.5 rounded border border-ink/20 dark:border-darkInk/20 hover:border-ink dark:hover:border-darkInk hover:text-ink dark:hover:text-darkInk hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-xs"
+              >
+                {preset}
+              </button>
+            ))}
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center justify-end gap-3 pt-2 border-t border-ink/10 dark:border-darkInk/10 text-xs">
+            <button
+              type="button"
+              onClick={() => {
+                setEditAuthor(entry.author || '');
+                setEditDate(entry.date || displayDate);
+                setIsEditing(false);
+              }}
+              className="opacity-60 hover:opacity-100 transition-opacity cursor-pointer font-handwritten text-sm"
+            >
+              [cancel]
+            </button>
+            <button
+              type="submit"
+              className="font-handwritten text-sm font-bold text-amber-800 dark:text-amber-300 hover:underline transition-all cursor-pointer px-3 py-1 bg-amber-500/15 rounded border border-amber-500/30"
+            >
+              [save changes]
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* Main Entry Title */}
       <h3 className="font-editorial italic text-2xl sm:text-4xl text-ink dark:text-darkInk font-bold tracking-tight mb-6 leading-tight">
@@ -248,7 +371,20 @@ export default function JournalEntryCard({
         {/* Right Meta: Inscribed By Author beside Folio Text in the Same Handwritten Font */}
         <div className="flex items-center gap-2 sm:gap-3 text-ink/50 dark:text-darkInk/50 select-none">
           {entry.author && (
-            <span className="text-ink/70 dark:text-darkInk/70">
+            <span 
+              className={`text-ink/70 dark:text-darkInk/70 ${
+                isOwner ? 'cursor-pointer hover:underline hover:text-blue-600 dark:hover:text-blue-400' : ''
+              }`}
+              title={isOwner ? 'Click to edit username (Dev control)' : undefined}
+              onClick={(e) => {
+                if (isOwner) {
+                  e.stopPropagation();
+                  setEditAuthor(entry.author || '');
+                  setEditDate(entry.date || displayDate);
+                  setIsEditing(true);
+                }
+              }}
+            >
               — {entry.author.replace(/^[-—]\s*/, '')}
             </span>
           )}

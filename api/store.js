@@ -387,7 +387,7 @@ export default async function handler(req, res) {
       body = {};
     }
 
-    const { action, thought, thoughtId, commentId, text, voterId, passkey } = body;
+    const { action, thought, thoughtId, commentId, text, voterId, passkey, updates } = body;
 
     // 1. Verify owner passkey
     if (action === 'verify_owner') {
@@ -462,6 +462,92 @@ export default async function handler(req, res) {
         });
       } catch (err) {
         console.error('[Store owner_delete] Error:', err);
+        return res.status(500).json({ error: err.message });
+      }
+    }
+
+    // 2b. Owner update thought metadata (author/username, date/month/season, title, content)
+    if (action === 'owner_update') {
+      if (!verifyOwnerPasskey(passkey)) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid passkey' });
+      }
+
+      try {
+        const state = await loadPersistentState(db);
+        const tId = String(thoughtId);
+        const patch = updates && typeof updates === 'object' ? updates : {};
+
+        // Find existing thought in state.thoughts or initialize from INITIAL_ENTRIES
+        let existing = state.thoughts.find((t) => String(t.id) === tId);
+        if (!existing) {
+          const init = INITIAL_ENTRIES.find((t) => String(t.id) === tId);
+          if (init) {
+            existing = {
+              ...init,
+              id: tId,
+              date: init.date || getSeasonAndYear(init.createdAt),
+              createdAt: init.createdAt || Date.now()
+            };
+            state.thoughts.push(existing);
+          }
+        }
+
+        if (existing) {
+          if (patch.author !== undefined) {
+            existing.author = String(patch.author).trim() || 'absurdharsh';
+          }
+          if (patch.date !== undefined) {
+            existing.date = String(patch.date).trim();
+          }
+          if (patch.title !== undefined) {
+            existing.title = String(patch.title).trim();
+          }
+          if (patch.content !== undefined) {
+            existing.content = String(patch.content).trim();
+          }
+        }
+
+        if (db && db.type === 'supabase') {
+          try {
+            const supabaseBody = {};
+            if (patch.author !== undefined) supabaseBody.author = String(patch.author).trim();
+            if (patch.title !== undefined) supabaseBody.title = String(patch.title).trim();
+            if (patch.content !== undefined) supabaseBody.content = String(patch.content).trim();
+
+            if (Object.keys(supabaseBody).length > 0) {
+              await fetch(`${db.url}/rest/v1/thoughts?id=eq.${tId}`, {
+                method: 'PATCH',
+                headers: {
+                  'apikey': db.key,
+                  'Authorization': `Bearer ${db.key}`,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify(supabaseBody)
+              });
+            }
+          } catch (supErr) {
+            console.error('[Supabase update thought] Error:', supErr);
+          }
+        }
+
+        await savePersistentState(db, state);
+        const mergedThoughts = mergeEntries(INITIAL_ENTRIES, state.thoughts, state.deletedIds);
+
+        return res.status(200).json({
+          ok: true,
+          persistent: true,
+          thought: existing,
+          state: {
+            persistent: true,
+            thoughts: mergedThoughts,
+            comments: state.comments,
+            likes: state.likes,
+            deletedIds: state.deletedIds
+          }
+        });
+      } catch (err) {
+        console.error('[Store owner_update] Error:', err);
         return res.status(500).json({ error: err.message });
       }
     }

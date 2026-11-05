@@ -310,6 +310,39 @@ export async function ownerDeleteApi({ thoughtId, commentId, passkey }) {
   return null;
 }
 
+// Owner update thought metadata (author, date/month/season, title, content) on /api/store
+export async function ownerUpdateThoughtApi({ thoughtId, updates, passkey }) {
+  try {
+    const res = await fetch(`${API_STORE_URL}?_t=${Date.now()}`, {
+      method: 'POST',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Pragma': 'no-cache',
+        'Cache-Control': 'no-cache'
+      },
+      body: JSON.stringify({
+        action: 'owner_update',
+        thoughtId: String(thoughtId),
+        updates: updates || {},
+        passkey: passkey ? passkey.trim() : ''
+      })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.state && data.persistent !== false) {
+        saveLocalState(data.state);
+        return data.state;
+      }
+    }
+  } catch (err) {
+    console.warn('[Store] owner_update error:', err.message);
+  }
+  return null;
+}
+
 // Combine INITIAL_ENTRIES and dynamic server thoughts while excluding deletedIds
 export function mergeEntries(initialEntries = [], cloudThoughts = [], deletedIds = []) {
   const deletedSet = new Set((deletedIds || []).map((id) => String(id)));
