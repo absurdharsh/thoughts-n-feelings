@@ -49,6 +49,24 @@ export function DoodlePenNib({ className = 'w-4 h-4' }) {
   );
 }
 
+export function DoodleEraser({ className = 'w-4 h-4' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`hand-drawn-line ${className}`}
+    >
+      <path d="M15 3.5 L20.5 9 L10 19.5 L4.5 19.5 L2.5 17.5 L6 13 L15 3.5 Z" />
+      <path d="M7.5 12 L13 17.5" />
+      <path d="M2 21.5 L12 21.5" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
 export function DoodleSun({ className = 'w-6 h-6' }) {
   return (
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={`hand-drawn-line ${className}`}>

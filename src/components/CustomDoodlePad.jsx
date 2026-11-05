@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { DoodlePenNib } from './HandDrawnDoodles';
+import { DoodlePenNib, DoodleEraser } from './HandDrawnDoodles';
 
 /**
  * CustomDoodlePad — 120x120 Binary Ink Drawing Pad
@@ -189,6 +189,7 @@ export default function CustomDoodlePad({ onDoodleChange, initialDataUrl = '' })
                 : 'border-ink/30 dark:border-darkInk/30 hover:border-ink dark:hover:border-darkInk opacity-70 hover:opacity-100'
             }`}
           >
+            <DoodleEraser className="w-3 h-3 text-current inline-block" />
             <span>eraser</span>
           </button>
 
