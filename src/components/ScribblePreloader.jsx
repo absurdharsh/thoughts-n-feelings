@@ -20,6 +20,9 @@ export default function ScribblePreloader({ isDark, onComplete }) {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) {
       document.body.style.overflow = originalOverflow;
+      try {
+        localStorage.setItem('hasSeenIntro', 'true');
+      } catch {}
       if (onComplete) onComplete();
       return;
     }
@@ -27,6 +30,9 @@ export default function ScribblePreloader({ isDark, onComplete }) {
     const tl = gsap.timeline({
       onComplete: () => {
         document.body.style.overflow = originalOverflow;
+        try {
+          localStorage.setItem('hasSeenIntro', 'true');
+        } catch {}
         if (onComplete) onComplete();
       }
     });
@@ -113,6 +119,9 @@ export default function ScribblePreloader({ isDark, onComplete }) {
   }, [onComplete]);
 
   const handleSkip = () => {
+    try {
+      localStorage.setItem('hasSeenIntro', 'true');
+    } catch {}
     if (preloaderRef.current) {
       gsap.to(preloaderRef.current, {
         yPercent: -100,

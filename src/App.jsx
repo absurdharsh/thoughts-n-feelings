@@ -74,7 +74,16 @@ export default function App() {
   );
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showPreloader, setShowPreloader] = useState(true);
+  const [showPreloader, setShowPreloader] = useState(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        return localStorage.getItem('hasSeenIntro') !== 'true';
+      }
+    } catch {
+      return true;
+    }
+    return true;
+  });
 
   // Secret Owner Session (verified on the server via /api/store)
   const [isOwner, setIsOwner] = useState(checkOwnerUnlocked);
@@ -582,9 +591,22 @@ export default function App() {
               absurdharsh
             </a>
           </p>
-          <p className="mt-2 text-sm opacity-50">
-            pure binary ink on paper &bull; zero noise &bull; crafted with organic linework
+          <p className="mt-2 text-sm opacity-50 flex items-center justify-center gap-3">
+            <span>pure binary ink on paper &bull; zero noise &bull; crafted with organic linework</span>
           </p>
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => {
+                setShowPreloader(true);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="naked-link scribble-hover text-xs font-handwritten text-ink/50 dark:text-darkInk/50 hover:text-ink dark:hover:text-darkInk transition-opacity select-none"
+              title="Watch the opening sketch animation again"
+            >
+              replay intro sketch ↺
+            </button>
+          </div>
         </footer>
 
         {/* Hand-Drawn Thought Inscription Modal */}

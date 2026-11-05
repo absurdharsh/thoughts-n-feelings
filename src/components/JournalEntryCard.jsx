@@ -9,10 +9,20 @@ import {
   DoodleStar
 } from './HandDrawnDoodles';
 import { formatEntryDate, getEntryTooltipDate } from '../utils/dateUtils';
+import ShareCardModal from './ShareCardModal';
 
 // Helper to render the appropriate margin doodle
 function renderMarginDoodle(type) {
   const commonClasses = 'w-5 h-5 text-ink/70 dark:text-darkInk/70';
+  if (typeof type === 'string' && type.startsWith('data:image')) {
+    return (
+      <img
+        src={type}
+        alt="custom doodle"
+        className="w-5 h-5 object-contain select-none dark:invert opacity-80"
+      />
+    );
+  }
   switch (type) {
     case 'star':
       return <DoodleStar className={commonClasses} />;
@@ -49,6 +59,9 @@ export default function JournalEntryCard({
 }) {
   const [copied, setCopied] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const [commentStatus, setCommentStatus] = useState('idle'); // 'idle' | 'dropping' | 'success'
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const displayDate = formatEntryDate(entry);
   const dateTooltip = getEntryTooltipDate(entry);
@@ -95,11 +108,20 @@ export default function JournalEntryCard({
 
   const handleCommentSubmit = (e) => {
     e.preventDefault();
-    if (!commentText.trim()) return;
+    const cleanText = commentText.trim();
+    if (cleanText.length < 2) return;
+    if (commentStatus !== 'idle') return;
+
+    setCommentStatus('dropping');
     if (onAddComment) {
-      onAddComment(commentText.trim());
+      onAddComment(cleanText);
     }
     setCommentText('');
+    setCommentStatus('success');
+
+    setTimeout(() => {
+      setCommentStatus('idle');
+    }, 1600);
   };
 
   // Shift-click deletion for anonymous comment (Owner only)
@@ -115,6 +137,9 @@ export default function JournalEntryCard({
 
   // Split multi-paragraph content cleanly
   const paragraphs = entry.content.split('\n\n').filter(Boolean);
+  const wordCount = entry.content.trim().split(/\s+/).length;
+  // Truncate if exceeds 300 words or has extensive paragraphs / lines
+  const isLongContent = wordCount > 300 || entry.content.length > 550 || paragraphs.length > 3;
 
   return (
     <article 
@@ -277,39 +302,64 @@ export default function JournalEntryCard({
         {entry.title}
       </h3>
 
-      {/* Multi-Paragraph Content with Editorial Whitespace */}
-      <div className="font-body text-lg sm:text-xl text-ink dark:text-darkInk leading-relaxed space-y-5">
-        {paragraphs.map((para, pIdx) => {
-          // If Ishika quote note, style subtly as handwritten attribution
-          if (para.includes('Ishika, a friend')) {
+      {/* Multi-Paragraph Content with Editorial Whitespace & Optional Truncation */}
+      <div className="relative">
+        <div
+          className={`font-body text-lg sm:text-xl text-ink dark:text-darkInk leading-relaxed space-y-5 transition-[max-height] duration-500 ease-in-out overflow-hidden ${
+            isLongContent && !isExpanded ? 'max-h-56' : 'max-h-[3000px]'
+          }`}
+        >
+          {paragraphs.map((para, pIdx) => {
+            // If Ishika quote note, style subtly as handwritten attribution
+            if (para.includes('Ishika, a friend')) {
+              return (
+                <p
+                  key={pIdx}
+                  className="font-handwritten text-base sm:text-lg text-ink/60 dark:text-darkInk/60 italic pl-3 border-l-2 border-ink/20 dark:border-darkInk/20 my-4"
+                >
+                  {para}
+                </p>
+              );
+            }
+
+            // If entry is a quote or stanza, render with indented margin
+            if (entry.type === 'quote') {
+              return (
+                <blockquote
+                  key={pIdx}
+                  className="font-editorial italic text-xl sm:text-2xl text-ink/90 dark:text-darkInk/90 pl-4 border-l-2 border-ink dark:border-darkInk my-4 whitespace-pre-line"
+                >
+                  {para}
+                </blockquote>
+              );
+            }
+
             return (
-              <p
-                key={pIdx}
-                className="font-handwritten text-base sm:text-lg text-ink/60 dark:text-darkInk/60 italic pl-3 border-l-2 border-ink/20 dark:border-darkInk/20 my-4"
-              >
+              <p key={pIdx} className="break-words">
                 {para}
               </p>
             );
-          }
+          })}
+        </div>
 
-          // If entry is a quote or stanza, render with indented margin
-          if (entry.type === 'quote') {
-            return (
-              <blockquote
-                key={pIdx}
-                className="font-editorial italic text-xl sm:text-2xl text-ink/90 dark:text-darkInk/90 pl-4 border-l-2 border-ink dark:border-darkInk my-4 whitespace-pre-line"
-              >
-                {para}
-              </blockquote>
-            );
-          }
+        {/* Subtle Paper Gradient Fade when truncated */}
+        {isLongContent && !isExpanded && (
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-paper dark:from-darkPaper to-transparent pointer-events-none" />
+        )}
 
-          return (
-            <p key={pIdx} className="break-words">
-              {para}
-            </p>
-          );
-        })}
+        {/* Organic Read More / Show Less Toggle Button */}
+        {isLongContent && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded((prev) => !prev);
+            }}
+            className="naked-link scribble-hover font-handwritten text-base text-ink/75 dark:text-darkInk/75 hover:text-ink dark:hover:text-darkInk mt-3 cursor-pointer select-none"
+          >
+            {isExpanded ? 'show less ↑' : 'read more ↓'}
+          </button>
+        )}
       </div>
 
       {/* Bottom Footer Actions */}
@@ -372,6 +422,19 @@ export default function JournalEntryCard({
           >
             {copied ? '✓ copied to clipboard!' : 'copy thought'}
           </button>
+
+          {/* Shareable Quote Card Link */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsShareModalOpen(true);
+            }}
+            className="naked-link scribble-hover text-ink/70 dark:text-darkInk/70 hover:text-ink dark:hover:text-darkInk"
+            title="Format & share this thought as a quote card"
+          >
+            share card ↗
+          </button>
         </div>
 
         {/* Right Meta: Inscribed By Author beside Folio Text in the Same Handwritten Font */}
@@ -418,7 +481,7 @@ export default function JournalEntryCard({
                   <div
                     key={comment.id}
                     onClick={(e) => handleCommentShiftClick(e, comment.id, comment.text)}
-                    className="flex items-baseline justify-between gap-3 text-base sm:text-lg group"
+                    className="flex items-baseline justify-between gap-3 text-base sm:text-lg group animate-note-fade-in"
                   >
                     <div className="flex items-baseline gap-2">
                       <span className="font-editorial italic text-sm text-ink/50 dark:text-darkInk/50 flex-shrink-0 select-none">
@@ -462,16 +525,29 @@ export default function JournalEntryCard({
               type="text"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
-              placeholder="leave an anonymous note..."
+              placeholder="leave an anonymous note (min. 2 chars)..."
               className="flex-grow bg-transparent border-b border-ink/20 dark:border-darkInk/20 focus:border-ink dark:focus:border-darkInk outline-none font-handwritten text-base sm:text-lg text-ink dark:text-darkInk placeholder:text-ink/40 dark:placeholder:text-darkInk/40 py-1 transition-colors"
               autoFocus
             />
             <button
               type="submit"
-              className="naked-link scribble-hover font-handwritten text-base text-ink/70 dark:text-darkInk/70 hover:text-ink dark:hover:text-darkInk flex-shrink-0"
+              disabled={commentText.trim().length < 2 || commentStatus !== 'idle'}
+              className={`naked-link font-handwritten text-base flex-shrink-0 transition-all ${
+                commentText.trim().length >= 2 && commentStatus === 'idle'
+                  ? 'scribble-hover text-ink dark:text-darkInk opacity-100 cursor-pointer font-bold'
+                  : commentStatus === 'success'
+                  ? 'text-green-700 dark:text-green-400 font-bold opacity-100'
+                  : commentStatus === 'dropping'
+                  ? 'text-ink/60 dark:text-darkInk/60 italic opacity-80'
+                  : 'text-ink/40 dark:text-darkInk/40 opacity-40 cursor-not-allowed'
+              }`}
               title="Leave anonymous note"
             >
-              drop note →
+              {commentStatus === 'dropping'
+                ? 'dropping note...'
+                : commentStatus === 'success'
+                ? '✓ note left in margins'
+                : 'drop note →'}
             </button>
           </form>
         </div>
@@ -479,6 +555,15 @@ export default function JournalEntryCard({
 
       {/* Hand-drawn divider between thoughts */}
       <DoodleDivider className="mt-14 text-ink/20 dark:text-darkInk/20" />
+
+      {/* Shareable Quote Card Modal */}
+      <ShareCardModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        entry={entry}
+        assignedNumber={assignedNumber}
+        displayDate={displayDate}
+      />
     </article>
   );
 }

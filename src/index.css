@@ -77,15 +77,17 @@
 /* Hand-Drawn Scribble Hover Underline */
 .scribble-hover {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   cursor: pointer;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.15s ease;
 }
 
 .scribble-hover::after {
   content: '';
   position: absolute;
   left: 0;
-  bottom: -4px;
+  bottom: -3px;
   width: 100%;
   height: 2px;
   background-color: currentColor;
@@ -93,10 +95,15 @@
   transform-origin: left center;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   filter: url(#hand-drawn-filter);
+  pointer-events: none;
 }
 
 .scribble-hover:hover::after {
   transform: scaleX(1);
+}
+
+.scribble-hover:active {
+  transform: scale(0.98);
 }
 
 /* Naked Clickable Item (No Rectangular Pill Buttons) */
@@ -116,4 +123,38 @@
 
 .naked-link:active {
   transform: translateY(1px);
+}
+
+.naked-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Dropdown Open Animation */
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Smooth Accordion / Note Item Fade In */
+@keyframes noteFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-note-fade-in {
+  animation: noteFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import JournalEntryCard from './JournalEntryCard';
 import { DoodleUnderline } from './HandDrawnDoodles';
+import SketchbookSelect from './SketchbookSelect';
 import { getCommentsForEntry } from '../utils/commentUtils';
 
 export default function DigitalBookLayout({
@@ -176,19 +177,18 @@ export default function DigitalBookLayout({
         {/* Controls: Minimal Hand-Drawn Sort Selector & Search */}
         <div className="flex items-center gap-5 sm:gap-6 flex-wrap w-full md:w-auto justify-between md:justify-end">
           
-          {/* Minimal Hand-Drawn Sort Dropdown */}
-          <div className="flex items-center gap-1.5 text-base sm:text-lg">
-            <span className="opacity-50 select-none">sort:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="bg-transparent text-ink dark:text-darkInk border-b border-ink/30 dark:border-darkInk/30 focus:border-ink dark:focus:border-darkInk outline-none font-handwritten text-base sm:text-lg cursor-pointer py-0.5 select-none transition-colors"
-            >
-              <option value="newest" className="bg-paper dark:bg-darkPaper text-ink dark:text-darkInk">newest</option>
-              <option value="oldest" className="bg-paper dark:bg-darkPaper text-ink dark:text-darkInk">oldest</option>
-              <option value="popular" className="bg-paper dark:bg-darkPaper text-ink dark:text-darkInk">most popular</option>
-            </select>
-          </div>
+          {/* Custom Hand-Drawn Sketchbook Sort Dropdown */}
+          <SketchbookSelect
+            label="sort:"
+            ariaLabel="Sort entries by date or popularity"
+            value={sortBy}
+            onChange={(val) => setSortBy(val)}
+            options={[
+              { value: 'newest', label: 'newest' },
+              { value: 'oldest', label: 'oldest' },
+              { value: 'popular', label: 'most popular' }
+            ]}
+          />
 
           {/* Minimal Naked Search Input */}
           <div className="flex items-center gap-2 text-base border-b border-ink/30 dark:border-darkInk/30 pb-0.5 focus-within:border-ink dark:focus-within:border-darkInk">
