@@ -1,17 +1,168 @@
-import React, { useState, useRef } from 'react';
-import { toPng, toBlob } from 'html-to-image';
-import {
-  DoodleStar,
-  DoodleSpiral,
-  DoodleEye,
-  DoodleSpark,
-  DoodleArrowDown
-} from './HandDrawnDoodles';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+
+/**
+ * Helper: Wrap text into lines based on canvas measureText
+ */
+function wrapCanvasText(ctx, text, maxWidth) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines = [];
+  let currentLine = '';
+
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && currentLine) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  }
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+  return lines;
+}
+
+/**
+ * Helper: Calculate dynamic typography and vertical gaps
+ * Based on character counts to guarantee airy, balanced editorial layouts
+ */
+function getTypographyAndSpacing({ titleLen, bodyLen, isSquare }) {
+  let headingSize;
+  let bodySize;
+  let bodyLineHeightRatio;
+
+  // 1. Short Entries (Body under 100 chars & Title under 25 chars)
+  if (bodyLen < 100 && titleLen < 25) {
+    headingSize = isSquare ? 23 : 25; // Moderate-large editorial size (~1.4x body)
+    bodySize = isSquare ? 16.5 : 18;
+    bodyLineHeightRatio = 1.7;
+  }
+  // 2. Medium Entries (Body 100–250 chars or Title over 25 chars)
+  else if (bodyLen <= 250) {
+    headingSize = isSquare ? 19 : 21; // Stepped down ~25% so titles fit on 1-2 refined lines
+    bodySize = isSquare ? 14.5 : 15.5;
+    bodyLineHeightRatio = 1.65;
+  }
+  // 3. Long Entries (Body over 250 chars)
+  else {
+    headingSize = isSquare ? 17.5 : 18.5; // Refined, understated editorial header
+    bodySize = isSquare ? 13.5 : 14;
+    bodyLineHeightRatio = 1.55;
+  }
+
+  // Author signature size (italic serif)
+  const authorSize = isSquare ? 15 : 16.5;
+
+  // Dedicated vertical gaps at 1x scale
+  const titleToBodyGap = bodyLen > 250 ? (isSquare ? 22 : 24) : (isSquare ? 24 : 28);
+  const bodyToAuthorGap = isSquare ? 22 : 26;
+  const paragraphBreakGap = isSquare ? 6 : 8;
+
+  return {
+    headingSize,
+    bodySize,
+    bodyLineHeightRatio,
+    authorSize,
+    titleToBodyGap,
+    bodyToAuthorGap,
+    paragraphBreakGap
+  };
+}
+
+/**
+ * Helper: Draw preset hand-drawn vector doodle onto canvas
+ */
+function drawPresetDoodle(ctx, doodleType, x, y, size, color) {
+  ctx.save();
+  ctx.translate(x, y);
+  const scale = size / 32;
+  ctx.scale(scale, scale);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  if (doodleType === 'star') {
+    const p = new Path2D(
+      'M16 3 C16.5 10, 17 15, 29 16 C17 17, 16.5 22, 16 29 C15.5 22, 15 17, 3 16 C15 15, 15.5 10, 16 3 Z'
+    );
+    ctx.stroke(p);
+  } else if (doodleType === 'spiral') {
+    const p = new Path2D(
+      'M16 15 C15 15, 14 16, 14 17 C14 18.5, 16 19.5, 17.5 19 C19.5 18, 20.5 15.5, 19.5 13.5 C18 11, 14.5 10.5, 12 12.5 C9 15, 9 19.5, 12 22.5 C15.5 25.5, 21 25, 24 21.5 C27.5 17.5, 26.5 11, 22.5 7.5'
+    );
+    ctx.stroke(p);
+  } else if (doodleType === 'eye') {
+    ctx.save();
+    ctx.scale(32 / 44, 32 / 26);
+    const p = new Path2D('M3 13 C10 4, 34 4, 41 13 C34 22, 10 22, 3 13 Z');
+    ctx.stroke(p);
+    ctx.beginPath();
+    ctx.arc(22, 13, 5, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(20.5, 11.5, 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = color === '#F5F5F5' ? '#0D0D0D' : '#F9F8F3';
+    ctx.fill();
+    ctx.restore();
+  } else if (doodleType === 'spark') {
+    ctx.save();
+    ctx.scale(32 / 24, 32 / 24);
+    ctx.beginPath();
+    ctx.moveTo(12, 2);
+    ctx.lineTo(12, 22);
+    ctx.moveTo(2, 12);
+    ctx.lineTo(22, 12);
+    ctx.moveTo(5, 5);
+    ctx.lineTo(19, 19);
+    ctx.moveTo(5, 19);
+    ctx.lineTo(19, 5);
+    ctx.stroke();
+    ctx.restore();
+  } else {
+    // Arrow Down default
+    ctx.beginPath();
+    ctx.moveTo(16, 4);
+    ctx.bezierCurveTo(15.8, 12, 16.3, 20, 16, 26);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(9, 19);
+    ctx.bezierCurveTo(12, 22, 14.5, 25, 16, 27);
+    ctx.bezierCurveTo(17.5, 25, 20, 22, 23, 19);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/**
+ * Helper: Draw custom user hand-drawn Base64 doodle onto canvas
+ */
+function drawCustomDoodle(ctx, dataUrl, x, y, size, isDark) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      ctx.save();
+      if (isDark) {
+        ctx.filter = 'invert(1)';
+      }
+      ctx.drawImage(img, x, y, size, size);
+      ctx.restore();
+      resolve();
+    };
+    img.onerror = () => resolve();
+    img.src = dataUrl;
+  });
+}
 
 /**
  * Publication-Grade Shareable Quote Card Generator
- * Formats thoughts into balanced, publication-ready cards for Instagram Stories (9:16)
- * and Square Posts (1:1) with exact typographic hierarchy, safe margins, and zero clipping.
+ * Uses Native HTML5 2D Canvas rendering for 1080p high-resolution exports.
+ * Guarantees zero text collision, dynamic typography scaling, single-line author attribution,
+ * and harmoniously centered content blocks.
  */
 export default function ShareCardModal({
   isOpen,
@@ -24,69 +175,240 @@ export default function ShareCardModal({
   const [cardTheme, setCardTheme] = useState('light'); // 'light' | 'dark'
   const [isExporting, setIsExporting] = useState(false);
   const [copiedNotification, setCopiedNotification] = useState('');
-  const cardRef = useRef(null);
-
-  if (!isOpen || !entry) return null;
+  const canvasRef = useRef(null);
 
   // Clean author name
-  const authorName = entry.author ? entry.author.replace(/^[-—]\s*/, '').trim() : 'absurdharsh';
+  const authorName = entry?.author
+    ? entry.author.replace(/^[-—]\s*/, '').trim()
+    : 'absurdharsh';
 
-  // Render margin doodle (supports both SVG doodles and custom Base64 drawings)
-  const renderDoodle = (doodleType) => {
-    if (typeof doodleType === 'string' && doodleType.startsWith('data:image')) {
-      return (
-        <img
-          src={doodleType}
-          alt="doodle"
-          className={`w-9 h-9 sm:w-10 sm:h-10 object-contain select-none ${
-            cardTheme === 'dark' ? 'invert' : ''
-          }`}
-        />
-      );
-    }
-    const cls = 'w-9 h-9 sm:w-10 sm:h-10 text-current opacity-85';
-    switch (doodleType) {
-      case 'star':
-        return <DoodleStar className={cls} />;
-      case 'spiral':
-        return <DoodleSpiral className={cls} />;
-      case 'eye':
-        return <DoodleEye className={cls} />;
-      case 'spark':
-        return <DoodleSpark className={cls} />;
-      default:
-        return <DoodleArrowDown className={cls} />;
-    }
-  };
+  const cleanTitle = entry?.title
+    ? entry.title.replace(/^["“]|["”]$/g, '').trim()
+    : 'thought';
 
-  // Wait for web fonts and snapshot card with high-resolution pixel ratio
-  const getCardImageBlob = async () => {
-    if (!cardRef.current) throw new Error('Card element not found');
+  const rawContent = (entry?.content || '').trim();
 
-    // 1. Wait for all document fonts (Google Fonts cursive, serif, mono) to load
+  // Render card onto canvas with 3x scale factor (1080px resolution)
+  const renderCard = useCallback(async () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !entry) return;
+
+    // Wait for custom web fonts (Instrument Serif, Patrick Hand)
     if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
       await document.fonts.ready;
     }
 
-    // 2. Micro-tick to allow layout and font-metrics to settle
-    await new Promise((resolve) => setTimeout(resolve, 80));
+    const isStory = aspectRatio === 'story';
+    const isDark = cardTheme === 'dark';
 
-    // 3. Render at pixelRatio 3 (360px * 3 = 1080px width)
-    const blob = await toBlob(cardRef.current, {
-      pixelRatio: 3,
-      cacheBust: true,
-      backgroundColor: cardTheme === 'dark' ? '#0D0D0D' : '#F9F8F3',
-      style: {
-        transform: 'none',
-        margin: '0'
-      }
+    // 1x Logical Coordinates
+    const logicalWidth = 360;
+    const logicalHeight = isStory ? 640 : 360;
+
+    // 3x High-Res Canvas Buffer (1080x1920 or 1080x1080)
+    const scale = 3;
+    canvas.width = logicalWidth * scale;
+    canvas.height = logicalHeight * scale;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.save();
+    ctx.scale(scale, scale);
+
+    // 1. Paper Background Fill
+    const bgColor = isDark ? '#0D0D0D' : '#F9F8F3';
+    const textColor = isDark ? '#F5F5F5' : '#111111';
+    const mutedColor = isDark ? 'rgba(245, 245, 245, 0.75)' : 'rgba(17, 17, 17, 0.75)';
+    const watermarkColor = isDark ? 'rgba(245, 245, 245, 0.45)' : 'rgba(17, 17, 17, 0.45)';
+    const dividerColor = isDark ? 'rgba(245, 245, 245, 0.15)' : 'rgba(17, 17, 17, 0.15)';
+
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+
+    // Card Outer Subtle Border
+    ctx.strokeStyle = dividerColor;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, 0.5, logicalWidth - 1, logicalHeight - 1);
+
+    // 2. Safe Margins
+    const padLeft = 28;
+    const padRight = 28;
+    const isSquare = !isStory;
+    const titleLen = cleanTitle.length;
+    const bodyLen = rawContent.length;
+
+    const padTop = isStory ? 32 : (bodyLen > 250 ? 20 : 26);
+    const padBottom = isStory ? 36 : (bodyLen > 250 ? 20 : 26);
+    const contentWidth = logicalWidth - padLeft - padRight; // 304px
+
+    // 3. Top Header: Category on Left, Season + Margin Doodle on Right
+    const headerTop = padTop;
+    const doodleSize = 30;
+    const doodleX = logicalWidth - padRight - doodleSize;
+    const doodleY = headerTop + 1;
+
+    // Category Label
+    ctx.font = '600 11px monospace';
+    ctx.fillStyle = mutedColor;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText((entry.type || 'thought').toUpperCase(), padLeft, headerTop + 16);
+
+    // Season & Year
+    const seasonText = (displayDate || 'Autumn 2026').toUpperCase();
+    ctx.font = '11px monospace';
+    ctx.fillStyle = mutedColor;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(seasonText, doodleX - 10, headerTop + 16);
+
+    // Margin Doodle
+    if (typeof entry.doodle === 'string' && entry.doodle.startsWith('data:image')) {
+      await drawCustomDoodle(ctx, entry.doodle, doodleX, doodleY, doodleSize, isDark);
+    } else {
+      drawPresetDoodle(ctx, entry.doodle, doodleX, doodleY, doodleSize, textColor);
+    }
+
+    const headerBottom = headerTop + 36;
+
+    // 4. Bottom Footer: Faint Divider + thoughts 'n' feelings Centered
+    const footerBottom = logicalHeight - padBottom;
+    const footerTop = footerBottom - 26;
+
+    ctx.beginPath();
+    ctx.strokeStyle = dividerColor;
+    ctx.lineWidth = 1;
+    ctx.moveTo(padLeft, footerTop);
+    ctx.lineTo(padLeft + contentWidth, footerTop);
+    ctx.stroke();
+
+    ctx.font = '10px monospace';
+    ctx.fillStyle = watermarkColor;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText("THOUGHTS 'N' FEELINGS", logicalWidth / 2, footerTop + 15);
+
+    // 5. Dynamic Typography Scaling & Pre-Calculation
+    const {
+      headingSize,
+      bodySize,
+      bodyLineHeightRatio,
+      authorSize,
+      titleToBodyGap,
+      bodyToAuthorGap,
+      paragraphBreakGap
+    } = getTypographyAndSpacing({ titleLen, bodyLen, isSquare });
+
+    // Measure Title Lines
+    const titleText = `“${cleanTitle}”`;
+    ctx.font = `italic bold ${headingSize}px "Instrument Serif", Georgia, serif`;
+    const titleLines = wrapCanvasText(ctx, titleText, contentWidth);
+    const titleLineHeight = Math.round(headingSize * 1.3);
+    const totalTitleHeight = titleLines.length * titleLineHeight;
+
+    // Measure Body Lines
+    const paragraphs = rawContent.split('\n\n').filter(Boolean);
+    ctx.font = `${bodySize}px "Patrick Hand", "Caveat", cursive`;
+    const bodyLineHeight = Math.round(bodySize * bodyLineHeightRatio);
+
+    const allBodyGroups = [];
+    let totalBodyHeight = 0;
+    paragraphs.forEach((para, idx) => {
+      const pLines = wrapCanvasText(ctx, para, contentWidth);
+      const isLast = idx === paragraphs.length - 1;
+      allBodyGroups.push({ lines: pLines, isLast });
+      totalBodyHeight += pLines.length * bodyLineHeight;
+      if (!isLast) totalBodyHeight += paragraphBreakGap;
     });
 
-    return blob;
+    // Single-Line Author Attribution
+    const authorText = `— ${authorName}`;
+    const authorLineHeight = Math.round(authorSize * 1.3);
+
+    // 6. Vertically Center the Complete Content Block Between Header & Footer
+    const totalContentHeight =
+      totalTitleHeight +
+      titleToBodyGap +
+      totalBodyHeight +
+      bodyToAuthorGap +
+      authorLineHeight;
+
+    const availableMiddleHeight = footerTop - headerBottom;
+    const startY =
+      headerBottom + Math.max(10, (availableMiddleHeight - totalContentHeight) / 2);
+
+    // 7. Render Sequential Flow with Running currentY Cursor (No Clashing)
+    let currentY = startY;
+
+    // Draw Title Lines
+    ctx.font = `italic bold ${headingSize}px "Instrument Serif", Georgia, serif`;
+    ctx.fillStyle = textColor;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+
+    for (let i = 0; i < titleLines.length; i++) {
+      ctx.fillText(titleLines[i], padLeft, currentY);
+      currentY += titleLineHeight;
+    }
+
+    // Dedicated Gap Between Title & Body
+    currentY += titleToBodyGap;
+
+    // Draw Body Lines
+    ctx.font = `${bodySize}px "Patrick Hand", "Caveat", cursive`;
+    ctx.fillStyle = textColor;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+
+    for (let p = 0; p < allBodyGroups.length; p++) {
+      const group = allBodyGroups[p];
+      for (let l = 0; l < group.lines.length; l++) {
+        ctx.fillText(group.lines[l], padLeft, currentY);
+        currentY += bodyLineHeight;
+      }
+      if (!group.isLast) {
+        currentY += paragraphBreakGap;
+      }
+    }
+
+    // Dedicated Gap Between Body & Author
+    currentY += bodyToAuthorGap;
+
+    // Draw Author Attribution on a Single Line
+    ctx.font = `italic bold ${authorSize}px "Instrument Serif", Georgia, serif`;
+    ctx.fillStyle = textColor;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(authorText, padLeft, currentY);
+
+    ctx.restore();
+  }, [entry, aspectRatio, cardTheme, displayDate, cleanTitle, rawContent, authorName]);
+
+  // Re-draw when modal opens or settings change
+  useEffect(() => {
+    if (isOpen) {
+      renderCard();
+    }
+  }, [isOpen, renderCard]);
+
+  if (!isOpen || !entry) return null;
+
+  // Export high-resolution PNG blob directly from canvas
+  const getCardImageBlob = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) throw new Error('Card canvas not found');
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('Failed to create image blob from canvas'));
+      }, 'image/png');
+    });
   };
 
   const handleDownload = async () => {
-    if (!cardRef.current || isExporting) return;
+    if (!canvasRef.current || isExporting) return;
     setIsExporting(true);
     setCopiedNotification('');
 
@@ -95,7 +417,7 @@ export default function ShareCardModal({
       if (!blob) throw new Error('Failed to generate image blob');
 
       const url = URL.createObjectURL(blob);
-      const safeTitle = (entry.title || 'thought')
+      const safeTitle = (cleanTitle || 'thought')
         .toLowerCase()
         .replace(/[^a-z0-9]/g, '-')
         .slice(0, 30);
@@ -117,7 +439,7 @@ export default function ShareCardModal({
   };
 
   const handleNativeShare = async () => {
-    if (!cardRef.current || isExporting) return;
+    if (!canvasRef.current || isExporting) return;
     setIsExporting(true);
     setCopiedNotification('');
 
@@ -130,14 +452,14 @@ export default function ShareCardModal({
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: `“${entry.title}” · thoughts 'n' feelings`,
-          text: `“${entry.title}” — ${authorName}`
+          title: `“${cleanTitle}” · thoughts 'n' feelings`,
+          text: `“${cleanTitle}” — ${authorName}`
         });
         setCopiedNotification('✓ shared to app!');
       } else if (navigator.share) {
         await navigator.share({
-          title: `“${entry.title}” · thoughts 'n' feelings`,
-          text: `“${entry.title}”\n\n${entry.content}\n\n— ${authorName}`
+          title: `“${cleanTitle}” · thoughts 'n' feelings`,
+          text: `“${cleanTitle}”\n\n${rawContent}\n\n— ${authorName}`
         });
         setCopiedNotification('✓ shared text!');
       } else {
@@ -152,80 +474,6 @@ export default function ShareCardModal({
       setIsExporting(false);
     }
   };
-
-  // Dynamic typography scale based on content length to prevent clipping in 9:16 and 1:1
-  const rawContent = (entry.content || '').trim();
-  const charCount = rawContent.length;
-  const paragraphs = rawContent.split('\n\n').filter(Boolean);
-
-  const cleanTitle = entry.title.replace(/^["“]|["”]$/g, '').trim();
-
-  // 1. Dynamic Heading Scaling (Based on Title Length)
-  // Short Titles (1–22 chars): Large, bold statement size (32px–36px)
-  // Medium Titles (23–45 chars): Slightly stepped-down size (26px–30px)
-  // Long Titles (46+ chars): Capped at strict minimum floor (never smaller than 22px–24px)
-  const isSquare = aspectRatio === 'square';
-  const titleLen = cleanTitle.length;
-  const bodyLen = charCount;
-
-  let headingSize;
-  if (titleLen <= 22) {
-    headingSize = isSquare && bodyLen > 250 ? 30 : 34;
-  } else if (titleLen <= 45) {
-    headingSize = isSquare && bodyLen > 250 ? 25 : 28;
-  } else {
-    headingSize = 23;
-  }
-
-  // 2. Dynamic Body Scaling (Based on Body Character Length)
-  // Short / Punchy Quotes (under 100 chars): Generous font size (22px–24px), relaxed line spacing (1.75)
-  // Medium Thoughts (100–280 chars): Balanced reading size (18px–20px), comfortable line spacing (1.65)
-  // Long Reflections (280–600+ chars): Step down gently (15px–17px, never smaller than 15px), line spacing (1.5)
-  let bodySize;
-  let bodyLineHeight;
-  if (bodyLen < 100) {
-    bodySize = isSquare ? 21 : 23;
-    bodyLineHeight = 1.75;
-  } else if (bodyLen <= 280) {
-    bodySize = isSquare ? 17 : 19;
-    bodyLineHeight = 1.65;
-  } else {
-    bodySize = isSquare ? 15 : 16;
-    bodyLineHeight = 1.5;
-  }
-
-  // Strict minimum floors
-  headingSize = Math.max(22, headingSize);
-  bodySize = Math.max(15, bodySize);
-
-  // 3. Contrast Ratio: Heading must always remain at least 1.35x larger than body font size
-  if (headingSize < bodySize * 1.35) {
-    const maxAllowedBody = Math.floor(headingSize / 1.35);
-    if (maxAllowedBody >= 15) {
-      bodySize = maxAllowedBody;
-    } else {
-      headingSize = Math.round(bodySize * 1.35);
-    }
-  }
-
-  // Author signature size proportional to body
-  const authorSize = Math.max(14, Math.round(bodySize * 0.95));
-
-  // 4. Proportional Gaps
-  // Enforce a dedicated minimum vertical gap (24px to 32px) between heading and body
-  let headingToBodyGap;
-  let bodyToAuthorGap;
-
-  if (bodyLen < 100 && titleLen <= 22) {
-    headingToBodyGap = isSquare ? 26 : 30; // 28px–32px
-    bodyToAuthorGap = isSquare ? 16 : 20;
-  } else if (bodyLen > 280 || (isSquare && bodyLen > 180)) {
-    headingToBodyGap = isSquare ? 20 : 24; // 20px–24px
-    bodyToAuthorGap = isSquare ? 12 : 16;
-  } else {
-    headingToBodyGap = isSquare ? 24 : 28; // 24px–28px
-    bodyToAuthorGap = isSquare ? 14 : 18;
-  }
 
   return (
     <div
@@ -317,122 +565,19 @@ export default function ShareCardModal({
           </div>
         </div>
 
-        {/* Card Canvas Container (Scaled interactive live preview) */}
+        {/* Card Canvas Container (High-Resolution 3x Canvas Live Preview) */}
         <div className="flex justify-center items-center py-5 bg-ink/5 dark:bg-darkInk/5 rounded my-3 overflow-hidden">
-          <div
-            ref={cardRef}
+          <canvas
+            ref={canvasRef}
             style={{
-              backgroundColor: cardTheme === 'dark' ? '#0D0D0D' : '#F9F8F3',
-              color: cardTheme === 'dark' ? '#F5F5F5' : '#111111',
               width: '360px',
               height: aspectRatio === 'story' ? '640px' : '360px',
               maxWidth: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              boxSizing: 'border-box'
+              aspectRatio: aspectRatio === 'story' ? '9/16' : '1/1',
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.25)'
             }}
-            className={`relative shadow-xl border border-current/15 select-none box-border ${
-              aspectRatio === 'story'
-                ? 'pt-8 pb-9 px-7' // Instagram Story safe margins: ~80px top, ~96px bottom, ~56px side in 3x scale
-                : bodyLen > 250
-                ? 'px-7 py-5' // Reduced outer vertical margins for long reflections in square format
-                : 'p-7' // Square post balanced margins
-            }`}
-          >
-            {/* Top Header: Category Only on Left, Season + Margin Doodle on Right */}
-            <header className="w-full flex items-center justify-between pb-2 flex-shrink-0">
-              {/* Category Label in Clean Tracked-out Uppercase Monospace */}
-              <div className="flex items-center">
-                <span className="font-mono text-xs uppercase tracking-[0.25em] opacity-80 font-semibold">
-                  {entry.type || 'thought'}
-                </span>
-              </div>
-
-              {/* Season & Year aligned horizontally right beside Margin Doodle */}
-              <div className="flex-shrink-0 flex items-center gap-2.5">
-                <span className="font-mono text-[11px] sm:text-xs opacity-75 tracking-wider uppercase">
-                  {displayDate || 'Autumn 2026'}
-                </span>
-                <div className="flex items-center justify-center">
-                  {renderDoodle(entry.doodle)}
-                </div>
-              </div>
-            </header>
-
-            {/* Central Hero Block: Vertically Centered Title, Body & Direct Author Signature */}
-            <main
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                flex: '1 1 auto',
-                minHeight: 0,
-                boxSizing: 'border-box'
-              }}
-              className="w-full my-auto py-1"
-            >
-              {/* Confident Italic Serif Title with Clean 1.25 Line-Height & Guaranteed Minimum Flow Gap */}
-              <h4
-                style={{
-                  fontSize: `${headingSize}px`,
-                  lineHeight: 1.25,
-                  margin: 0,
-                  marginBottom: `${headingToBodyGap}px`,
-                  display: 'block',
-                  width: '100%',
-                  wordBreak: 'break-word',
-                  boxSizing: 'border-box'
-                }}
-                className="font-editorial italic font-bold tracking-tight"
-              >
-                “{cleanTitle}”
-              </h4>
-
-              {/* Body Thought with Dynamic Size, Proportional Line Spacing & Sequential Natural Flow */}
-              <div
-                style={{
-                  fontSize: `${bodySize}px`,
-                  lineHeight: bodyLineHeight,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: bodyLen > 280 ? '8px' : '10px',
-                  boxSizing: 'border-box'
-                }}
-                className="font-body opacity-90"
-              >
-                {paragraphs.map((para, i) => (
-                  <p key={i} style={{ margin: 0, padding: 0 }} className="break-words">
-                    {para}
-                  </p>
-                ))}
-              </div>
-
-              {/* Author Signature Directly Below Thought Body with Proportional Gap */}
-              <div
-                style={{
-                  marginTop: `${bodyToAuthorGap}px`,
-                  boxSizing: 'border-box'
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: `${authorSize}px`
-                  }}
-                  className="font-editorial italic font-bold opacity-90 inline-block"
-                >
-                  — {authorName}
-                </span>
-              </div>
-            </main>
-
-            {/* Bottom Footer: thoughts 'n' feelings Centered Cleanly Below Faint Divider Line */}
-            <footer className="pt-3 border-t border-current/15 flex items-center justify-center flex-shrink-0">
-              <span className="text-[10px] sm:text-[11px] opacity-45 tracking-[0.25em] font-mono uppercase select-none text-center">
-                thoughts 'n' feelings
-              </span>
-            </footer>
-          </div>
+            className="select-none block"
+          />
         </div>
 
         {copiedNotification && (
