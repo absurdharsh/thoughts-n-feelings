@@ -207,3 +207,4 @@ export default function CustomDoodlePad({ onDoodleChange, initialDataUrl = '' })
     </div>
   );
 }
+
