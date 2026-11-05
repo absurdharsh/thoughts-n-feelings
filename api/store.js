@@ -6,7 +6,23 @@
 
 import crypto from 'node:crypto';
 import { INITIAL_ENTRIES } from '../src/data/initialThoughts.js';
-import { getSeasonAndYear } from '../src/utils/dateUtils.js';
+
+function getSeason(dateObj) {
+  const d = dateObj instanceof Date ? dateObj : new Date(dateObj || Date.now());
+  const month = d.getMonth();
+  if (month >= 2 && month <= 4) return 'Spring';
+  if (month >= 5 && month <= 7) return 'Summer';
+  if (month >= 8 && month <= 10) return 'Autumn';
+  return 'Winter';
+}
+
+function getSeasonAndYear(timestamp = Date.now()) {
+  const ts = typeof timestamp === 'number' ? timestamp : Date.now();
+  const d = new Date(ts);
+  const season = getSeason(d);
+  const year = d.getFullYear();
+  return `${season} ${year}`;
+}
 
 const REDIS_KEY = 'tf_global_store_v1';
 const OWNER_PASSKEY_HASH = '27d757767ff122f9c636f38a3be2bb716ba42776efdff5a8a3b2ed6a2701b313';
