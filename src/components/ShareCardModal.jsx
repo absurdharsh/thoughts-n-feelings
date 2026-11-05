@@ -28,11 +28,6 @@ export default function ShareCardModal({
 
   if (!isOpen || !entry) return null;
 
-  // Format clean counter number (e.g. "01", "14")
-  const cleanNumber = String(
-    assignedNumber || entry.number || (entry.id && String(entry.id).replace('entry-', '')) || '01'
-  ).padStart(2, '0');
-
   // Clean author name
   const authorName = entry.author ? entry.author.replace(/^[-—]\s*/, '').trim() : 'absurdharsh';
 
@@ -283,30 +278,27 @@ export default function ShareCardModal({
                 : 'p-7' // Square post balanced margins
             }`}
           >
-            {/* Top Header: № Counter · Category on Left, Margin Doodle on Right */}
+            {/* Top Header: Category Only on Left, Season + Margin Doodle on Right */}
             <header className="w-full flex items-center justify-between pb-2">
-              <div className="flex items-center gap-2 font-medium">
-                {/* Folio in Serif */}
-                <span className="font-editorial italic text-xl font-bold tracking-normal">
-                  № {cleanNumber}
-                </span>
-
-                {/* Delicate Divider Dot */}
-                <span className="opacity-35 select-none font-sans text-sm">&bull;</span>
-
-                {/* Tracked-out Category in Monospace Small Caps */}
+              {/* Category Label in Clean Tracked-out Uppercase Monospace */}
+              <div className="flex items-center">
                 <span className="font-mono text-xs uppercase tracking-[0.25em] opacity-80 font-semibold">
                   {entry.type || 'thought'}
                 </span>
               </div>
 
-              {/* Hand-Drawn Margin Doodle */}
-              <div className="flex-shrink-0 flex items-center justify-center">
-                {renderDoodle(entry.doodle)}
+              {/* Season & Year aligned horizontally right beside Margin Doodle */}
+              <div className="flex-shrink-0 flex items-center gap-2.5">
+                <span className="font-mono text-[11px] sm:text-xs opacity-75 tracking-wider uppercase">
+                  {displayDate || 'Autumn 2026'}
+                </span>
+                <div className="flex items-center justify-center">
+                  {renderDoodle(entry.doodle)}
+                </div>
               </div>
             </header>
 
-            {/* Central Hero Block: Golden-Ratio Vertically Centered Title & Body */}
+            {/* Central Hero Block: Vertically Centered Title, Body & Direct Author Signature */}
             <main className="my-auto py-2 flex flex-col justify-center">
               {/* Confident Italic Serif Title with Curly Quotes */}
               <h4 className="font-editorial italic text-2xl sm:text-3xl font-bold tracking-tight leading-[1.25] mb-4 break-words">
@@ -321,27 +313,20 @@ export default function ShareCardModal({
                   </p>
                 ))}
               </div>
-            </main>
 
-            {/* Bottom Footer: Attribution Row + Watermark Footnote (Collision-Free) */}
-            <footer className="pt-3 border-t border-current/15 flex flex-col gap-2">
-              {/* Single Clean Attribution Row */}
-              <div className="flex items-baseline justify-between w-full">
-                {/* Author Signature */}
-                <span className="font-editorial italic text-base sm:text-lg font-bold">
+              {/* Author Signature Directly Below Thought Body */}
+              <div className="mt-3.5 pt-0.5">
+                <span className="font-editorial italic text-base sm:text-lg font-bold opacity-90">
                   — {authorName}
                 </span>
-
-                {/* Season & Year */}
-                <span className="font-mono text-xs opacity-75 tracking-wider uppercase">
-                  {displayDate || 'Autumn 2026'}
-                </span>
               </div>
+            </main>
 
-              {/* Discreet Brand Watermark with Strict Margin Separation */}
-              <div className="text-[10px] opacity-45 tracking-[0.25em] text-center pt-1 font-mono uppercase select-none">
-                thoughts 'n' feelings &bull; absurdharsh
-              </div>
+            {/* Bottom Footer: thoughts 'n' feelings Centered Cleanly Below Faint Divider Line */}
+            <footer className="pt-3 border-t border-current/15 flex items-center justify-center">
+              <span className="text-[10px] sm:text-[11px] opacity-45 tracking-[0.25em] font-mono uppercase select-none text-center">
+                thoughts 'n' feelings
+              </span>
             </footer>
           </div>
         </div>
